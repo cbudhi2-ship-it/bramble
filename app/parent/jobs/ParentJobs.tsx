@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatPence } from "@/lib/money";
+import { normalizeRoom } from "@/lib/rooms";
 
 export interface JobLite {
   id: string;
@@ -14,6 +15,7 @@ export interface JobLite {
   recurrence: string;
   room: string | null;
   people_needed: number;
+  age_min: number;
 }
 
 interface Props {
@@ -89,13 +91,41 @@ export default function ParentJobs({ initialJobs, demo = false }: Props) {
   const [age, setAge] = useState("5");
   const [busy, setBusy] = useState(false);
   const [tip, setTip] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   function flash(msg: string) {
     setTip(msg);
     setTimeout(() => setTip(null), 1800);
   }
 
-  async function add() {
+  function resetForm() {
+    setEditingId(null);
+    setKind("house_critical");
+    setTitle("");
+    setRoom("");
+    setFreq("daily");
+    setPeople(1);
+    setAmbient("");
+    setPrice("1.00");
+    setFallback("1.00");
+    setAge("5");
+  }
+
+  function startEdit(j: JobLite) {
+    setEditingId(j.id);
+    setKind(j.kind === "paid" ? "paid" : "house_critical");
+    setTitle(j.title);
+    setRoom(j.room ?? "");
+    setFreq((["daily", "weekdays", "weekly", "monthly"].includes(j.recurrence) ? j.recurrence : "daily") as Freq);
+    setPeople(Math.min(3, Math.max(1, j.people_needed)));
+    setAmbient(j.framing_ambient ?? "");
+    setPrice((j.price_pence / 100).toFixed(2));
+    setFallback((j.fallback_pence / 100).toFixed(2));
+    setAge(String(j.age_min ?? 5));
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function submit() {
     if (!title.trim()) return flash("Give the job a name first.");
     const payload = {
       title: title.trim(),
@@ -110,49 +140,49 @@ export default function ParentJobs({ initialJobs, demo = false }: Props) {
     };
 
     if (demo) {
-      setJobs((j) => [
-        {
-          id: `demo-${Date.now()}`,
-          title: payload.title,
-          kind: payload.kind,
-          price_pence: payload.price_pence,
-          fallback_pence: payload.fallback_pence,
-          framing_ambient: payload.framing_ambient || payload.title,
-          recurrence: freq,
-          room: payload.room || null,
-          people_needed: payload.people_needed,
-        },
-        ...j,
-      ]);
-      setTitle("");
-      setAmbient("");
-      setRoom("");
-      flash("Added (demo — nothing saved).");
+      const local: JobLite = {
+        id: editingId ?? `demo-${Date.now()}`,
+        title: payload.title,
+        kind: payload.kind,
+        price_pence: payload.price_pence,
+        fallback_pence: payload.fallback_pence,
+        framing_ambient: payload.framing_ambient || payload.title,
+        recurrence: freq,
+        room: normalizeRoom(payload.room),
+        people_needed: payload.people_needed,
+        age_min: payload.age_min,
+      };
+      setJobs((j) => (editingId ? j.map((x) => (x.id === editingId ? local : x)) : [local, ...j]));
+      flash(editingId ? "Saved (demo — nothing stored)." : "Added (demo — nothing saved).");
+      resetForm();
       return;
     }
 
     setBusy(true);
-    const res = await fetch("/api/parent/jobs", {
-      method: "POST",
+    const res = await fetch(editingId ? `/api/parent/jobs/${editingId}` : "/api/parent/jobs", {
+      method: editingId ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
     setBusy(false);
     if (res.ok) {
-      setTitle("");
-      setAmbient("");
-      setRoom("");
-      flash("Added to the library.");
-      router.refresh();
       const { job } = await res.json();
-      if (job) setJobs((j) => [job as JobLite, ...j]);
+      if (job) {
+        setJobs((j) =>
+          editingId ? j.map((x) => (x.id === editingId ? (job as JobLite) : x)) : [job as JobLite, ...j]
+        );
+      }
+      flash(editingId ? "Saved." : "Added to the library.");
+      resetForm();
+      router.refresh();
     } else {
-      flash("Couldn't add it — try again.");
+      flash("Couldn't save it — try again.");
     }
   }
 
   async function remove(id: string) {
     setJobs((j) => j.filter((x) => x.id !== id));
+    if (editingId === id) resetForm();
     if (demo) return;
     await fetch(`/api/parent/jobs/${id}`, { method: "DELETE" });
     router.refresh();
@@ -160,12 +190,15 @@ export default function ParentJobs({ initialJobs, demo = false }: Props) {
 
   const isPaid = kind === "paid";
 
-  // group the library by room so parents can see which rooms are covered
+  // group the library by room, case-insensitively so "Bedroom" and "bedroom"
+  // merge, with a canonical Title-Case display name.
   const byRoom = new Map<string, JobLite[]>();
   for (const j of jobs) {
-    const key = j.room?.trim() || "Anywhere / no room";
+    const key = normalizeRoom(j.room) ?? "Anywhere / no room";
     (byRoom.get(key) ?? byRoom.set(key, []).get(key)!).push(j);
   }
+  // existing room names, for the add-form autocomplete (so parents reuse them)
+  const existingRooms = [...byRoom.keys()].filter((k) => k !== "Anywhere / no room").sort();
 
   return (
     <div className={`appshell${demo ? "" : " app-fullwidth"}`}>
@@ -216,7 +249,17 @@ export default function ParentJobs({ initialJobs, demo = false }: Props) {
               />
 
               <label>Which room (optional)</label>
-              <input value={room} onChange={(e) => setRoom(e.target.value)} placeholder="Kitchen" />
+              <input
+                value={room}
+                onChange={(e) => setRoom(e.target.value)}
+                placeholder="Kitchen"
+                list="known-rooms"
+              />
+              <datalist id="known-rooms">
+                {existingRooms.map((r) => (
+                  <option key={r} value={r} />
+                ))}
+              </datalist>
 
               <label>What kind of job</label>
               <div className="seg">
@@ -274,9 +317,26 @@ export default function ParentJobs({ initialJobs, demo = false }: Props) {
               <label>Youngest age who can do it</label>
               <input value={age} onChange={(e) => setAge(e.target.value)} inputMode="numeric" />
 
-              <button className="loginbtn" style={{ marginTop: 16 }} onClick={add} disabled={busy}>
-                {busy ? "…" : "Add to the library"}
+              <button className="loginbtn" style={{ marginTop: 16 }} onClick={submit} disabled={busy}>
+                {busy ? "…" : editingId ? "Save changes" : "Add to the library"}
               </button>
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  style={{
+                    width: "100%",
+                    marginTop: 8,
+                    background: "none",
+                    border: 0,
+                    color: "var(--ink-3)",
+                    fontSize: 13,
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel edit
+                </button>
+              )}
             </div>
 
             {/* ---- library, grouped by room ---- */}
@@ -299,7 +359,11 @@ export default function ParentJobs({ initialJobs, demo = false }: Props) {
                   {roomName} · {roomJobs.length}
                 </div>
                 {roomJobs.map((j) => (
-                  <div className="jobrow" key={j.id}>
+                  <div
+                    className="jobrow"
+                    key={j.id}
+                    style={editingId === j.id ? { borderColor: "var(--berry)", background: "#FBF4F9" } : undefined}
+                  >
                     <span
                       className="pill"
                       style={{
@@ -320,6 +384,14 @@ export default function ParentJobs({ initialJobs, demo = false }: Props) {
                         {formatPence(j.fallback_pence)}
                       </span>
                     </div>
+                    <button
+                      className="go"
+                      style={{ background: "var(--berry)", color: "#fff" }}
+                      onClick={() => startEdit(j)}
+                      aria-label={`Edit ${j.title}`}
+                    >
+                      Edit
+                    </button>
                     <button
                       className="go"
                       style={{ background: "var(--paper-2)", color: "var(--ink-2)" }}

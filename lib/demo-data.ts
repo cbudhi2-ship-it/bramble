@@ -36,11 +36,11 @@ export const DEMO_PEOPLE: DemoPerson[] = [
 /** Sample job library for the /demo jobs screen. */
 export function getDemoJobs() {
   return [
-    { id: "j1", title: "Empty the dishwasher", kind: "house_critical" as const, price_pence: 0, fallback_pence: 100, framing_ambient: "The dishwasher is full", recurrence: "daily", room: "Kitchen", people_needed: 1 },
-    { id: "j2", title: "Wipe the sides", kind: "house_critical" as const, price_pence: 0, fallback_pence: 75, framing_ambient: "The sides need a wipe", recurrence: "daily", room: "Kitchen", people_needed: 1 },
-    { id: "j5", title: "Clean the bathroom", kind: "house_critical" as const, price_pence: 0, fallback_pence: 200, framing_ambient: "The bathroom needs doing", recurrence: "weekly", room: "Bathroom", people_needed: 2 },
-    { id: "j3", title: "Hoover the car", kind: "paid" as const, price_pence: 200, fallback_pence: 200, framing_ambient: "The car's full of crumbs", recurrence: "weekly", room: "Outside", people_needed: 1 },
-    { id: "j4", title: "Water the plants", kind: "paid" as const, price_pence: 50, fallback_pence: 50, framing_ambient: "The plants look thirsty", recurrence: "monthly", room: null, people_needed: 1 },
+    { id: "j1", title: "Empty the dishwasher", kind: "house_critical" as const, price_pence: 0, fallback_pence: 100, framing_ambient: "The dishwasher is full", recurrence: "daily", room: "Kitchen", people_needed: 1, age_min: 5 },
+    { id: "j2", title: "Wipe the sides", kind: "house_critical" as const, price_pence: 0, fallback_pence: 75, framing_ambient: "The sides need a wipe", recurrence: "daily", room: "Kitchen", people_needed: 1, age_min: 5 },
+    { id: "j5", title: "Clean the bathroom", kind: "house_critical" as const, price_pence: 0, fallback_pence: 200, framing_ambient: "The bathroom needs doing", recurrence: "weekly", room: "Bathroom", people_needed: 2, age_min: 5 },
+    { id: "j3", title: "Hoover the car", kind: "paid" as const, price_pence: 200, fallback_pence: 200, framing_ambient: "The car's full of crumbs", recurrence: "weekly", room: "Outside", people_needed: 1, age_min: 5 },
+    { id: "j4", title: "Water the plants", kind: "paid" as const, price_pence: 50, fallback_pence: 50, framing_ambient: "The plants look thirsty", recurrence: "monthly", room: null, people_needed: 1, age_min: 5 },
   ];
 }
 

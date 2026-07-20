@@ -16,7 +16,7 @@ export default async function ParentJobsPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("job_def")
-    .select("id, title, kind, price_pence, fallback_pence, framing_ambient, recurrence, room, people_needed")
+    .select("id, title, kind, price_pence, fallback_pence, framing_ambient, recurrence, room, people_needed, age_min")
     .eq("household_id", parent.householdId)
     .eq("active", true)
     .order("created_at", { ascending: false });

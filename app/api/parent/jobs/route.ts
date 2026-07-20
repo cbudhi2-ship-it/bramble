@@ -17,6 +17,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getParent } from "@/lib/parent-auth";
+import { normalizeRoom } from "@/lib/rooms";
 
 export async function GET() {
   const parent = await getParent();
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
 
   const FREQUENCIES = ["daily", "weekdays", "weekly", "monthly"];
   const recurrence = FREQUENCIES.includes(body?.recurrence) ? body.recurrence : "daily";
-  const room = (body?.room ?? "").toString().trim() || null;
+  const room = normalizeRoom(body?.room);
   const people_needed = Math.min(4, Math.max(1, Math.round(Number(body?.people_needed) || 1)));
 
   const supabase = await createClient();
