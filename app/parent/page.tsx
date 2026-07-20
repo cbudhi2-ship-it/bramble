@@ -42,6 +42,7 @@ export default async function ParentPage() {
       members={data.members.map((m) => ({ id: m.id, name: m.display_name, colour: m.colour_hex }))}
       jobs={data.jobs.map((j) => serialise(j, memberName))}
       undistributed={data.undistributed}
+      parentTasks={data.parentTasks}
     />
   );
 }

@@ -39,6 +39,7 @@ Supabase Auth in §6 — those are app logins, not external services.
    - `0002_job_fallback.sql` — the per-job 6pm fallback price column
    - `0003_dealt_to.sql` — records the original assignee for the insights panel
    - `0004_frequency_room_people.sql` — monthly frequency, room, multi-person jobs
+   - `0005_parent_tasks.sql` — the parent's own to-do list
 
    Each should report "Success. No rows returned."
 4. Go to **Project Settings → API** and copy three values — you'll paste them in

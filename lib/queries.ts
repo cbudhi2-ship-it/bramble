@@ -78,6 +78,7 @@ export async function getParentToday(householdId: string) {
     { data: household },
     { data: jobDefs },
     { data: overrides },
+    { data: tasks },
   ] = await Promise.all([
     supabase
       .from("job_instance")
@@ -91,6 +92,12 @@ export async function getParentToday(householdId: string) {
       .from("presence_override")
       .select("*, member!inner(household_id)")
       .eq("member.household_id", householdId),
+    supabase
+      .from("parent_task")
+      .select("id, title, done")
+      .eq("household_id", householdId)
+      .eq("done", false)
+      .order("created_at", { ascending: false }),
   ]);
 
   const all = (jobs ?? []) as HydratedJob[];
@@ -123,6 +130,7 @@ export async function getParentToday(householdId: string) {
     members: members ?? [],
     jobs: all,
     undistributed,
+    parentTasks: (tasks ?? []) as { id: string; title: string; done: boolean }[],
   };
 }
 

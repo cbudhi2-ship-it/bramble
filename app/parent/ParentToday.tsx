@@ -28,11 +28,17 @@ interface Undistributed {
   icon: string;
   fallback_pence: number;
 }
+interface ParentTask {
+  id: string;
+  title: string;
+  done: boolean;
+}
 interface Props {
   loadState: "normal" | "stretched" | "survival";
   members: Member[];
   jobs: Job[];
   undistributed?: Undistributed[];
+  parentTasks?: ParentTask[];
   demo?: boolean;
 }
 
@@ -47,6 +53,7 @@ export default function ParentToday({
   members,
   jobs,
   undistributed = [],
+  parentTasks = [],
   demo = false,
 }: Props) {
   const router = useRouter();
@@ -56,6 +63,38 @@ export default function ParentToday({
   const [amount, setAmount] = useState("50");
   const [note, setNote] = useState("");
   const [demoTip, setDemoTip] = useState(false);
+  const [tasks, setTasks] = useState<ParentTask[]>(parentTasks);
+  const [newTask, setNewTask] = useState("");
+
+  async function addTask() {
+    const title = newTask.trim();
+    if (!title) return;
+    if (demo) {
+      setTasks((t) => [{ id: `demo-${Date.now()}`, title, done: false }, ...t]);
+      setNewTask("");
+      return tip();
+    }
+    setNewTask("");
+    const res = await fetch("/api/parent/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    });
+    if (res.ok) {
+      const { task } = await res.json();
+      setTasks((t) => [task, ...t]);
+    }
+  }
+
+  async function completeTask(id: string) {
+    setTasks((t) => t.filter((x) => x.id !== id));
+    if (demo) return;
+    await fetch(`/api/parent/tasks/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ done: true }),
+    });
+  }
 
   function tip() {
     setDemoTip(true);
@@ -352,6 +391,61 @@ export default function ParentToday({
                 ))}
               </>
             )}
+
+            {/* the parent's own to-do — separate from the children's jobs */}
+            <div className="grouphead">Your to-do · {tasks.length}</div>
+            <div style={{ display: "flex", gap: 6, marginBottom: 9 }}>
+              <input
+                value={newTask}
+                onChange={(e) => setNewTask(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") addTask();
+                }}
+                placeholder="Add something for you to do…"
+                style={{
+                  flex: 1,
+                  font: "inherit",
+                  fontSize: 13,
+                  padding: "9px 11px",
+                  border: "1.5px solid var(--line)",
+                  borderRadius: 9,
+                  background: "#fff",
+                  color: "var(--ink)",
+                  minWidth: 0,
+                }}
+              />
+              <button
+                onClick={addTask}
+                className="go"
+                style={{ background: "var(--berry)", color: "#fff", padding: "0 16px" }}
+              >
+                Add
+              </button>
+            </div>
+            {tasks.map((t) => (
+              <div className="jobrow" key={t.id}>
+                <button
+                  onClick={() => completeTask(t.id)}
+                  aria-label={`Mark "${t.title}" done`}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: "50%",
+                    border: "2px solid var(--line)",
+                    background: "#fff",
+                    color: "var(--ink-3)",
+                    cursor: "pointer",
+                    flex: "none",
+                    fontSize: 13,
+                  }}
+                >
+                  ✓
+                </button>
+                <div className="tx">
+                  <b>{t.title}</b>
+                </div>
+              </div>
+            ))}
 
             {/* done today */}
             {done.length > 0 && (

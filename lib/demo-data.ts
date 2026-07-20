@@ -191,6 +191,10 @@ export function getDemoParent() {
     undistributed: [
       { id: "u1", title: "Clean the bathroom", icon: "🛁", fallback_pence: 150 },
     ],
+    parentTasks: [
+      { id: "t1", title: "Book the dentist", done: false },
+      { id: "t2", title: "Order Nell's birthday present", done: false },
+    ],
   };
 }
 
