@@ -1,0 +1,15 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bramble">
+  <!-- full-bleed paper ground: safe under any mask shape -->
+  <rect width="512" height="512" fill="#F4F1F6"/>
+  <!-- simplified mark, scaled small and centred so it sits inside the 80% safe circle -->
+  <g transform="translate(256 256) scale(2.55) translate(-50 -52)">
+    <ellipse cx="66" cy="26" rx="11" ry="6.5" fill="#3F7A54" transform="rotate(-26 66 26)"/>
+    <path d="M58 32 C54 39 52 45 52 50" stroke="#3F7A54" stroke-width="4.2" stroke-linecap="round" fill="none"/>
+    <circle cx="38" cy="56" r="15.5" fill="#6B2456"/>
+    <circle cx="62" cy="53" r="13.5" fill="#9B3F7E"/>
+    <circle cx="50" cy="74" r="15" fill="#6B2456"/>
+    <circle cx="35" cy="53" r="3.4" fill="#804074" opacity="0.55"/>
+    <circle cx="59" cy="50" r="3" fill="#B05E97" opacity="0.55"/>
+    <circle cx="47" cy="71" r="3.4" fill="#804074" opacity="0.55"/>
+  </g>
+</svg>

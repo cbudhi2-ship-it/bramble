@@ -1,0 +1,75 @@
+/**
+ * Presence resolution (spec §5 step 1).
+ *
+ * full_time members are always present. eow_and_holidays members are present
+ * when today falls in their every-other-weekend pattern OR a presence_override
+ * says so. An explicit override (present true/false) always wins over the
+ * pattern — that is how holidays, swaps and one-off nights are expressed.
+ */
+import type { Member, PresenceOverride } from "./types.ts";
+
+/** Parse "YYYY-MM-DD" as a UTC date (no timezone drift). */
+export function parseDate(date: string): Date {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+
+/** Fri (5), Sat (6), Sun (0) count as weekend — when the weekend crew is here. */
+export function isWeekend(date: string): boolean {
+  const dow = parseDate(date).getUTCDay();
+  return dow === 5 || dow === 6 || dow === 0;
+}
+
+/** Age in whole years at `date`, or null if dob unknown. */
+export function ageAt(dob: string | null, date: string): number | null {
+  if (!dob) return null;
+  const b = parseDate(dob);
+  const d = parseDate(date);
+  let age = d.getUTCFullYear() - b.getUTCFullYear();
+  const beforeBirthday =
+    d.getUTCMonth() < b.getUTCMonth() ||
+    (d.getUTCMonth() === b.getUTCMonth() && d.getUTCDate() < b.getUTCDate());
+  if (beforeBirthday) age--;
+  return age;
+}
+
+/** ISO-week ordinal since epoch — used for "every OTHER weekend" parity. */
+function weekOrdinal(date: string): number {
+  const d = parseDate(date);
+  return Math.floor(d.getTime() / (7 * 24 * 60 * 60 * 1000));
+}
+
+/**
+ * Is an eow member here this weekend by the default pattern? Even-week parity
+ * is a placeholder rule; real schedules are driven by presence_override, which
+ * takes precedence in resolvePresence().
+ */
+function eowWeekendByPattern(date: string): boolean {
+  return isWeekend(date) && weekOrdinal(date) % 2 === 0;
+}
+
+function overrideFor(
+  memberId: string,
+  date: string,
+  overrides: PresenceOverride[]
+): boolean | null {
+  const hit = overrides.find(
+    (o) => o.member_id === memberId && date >= o.date_from && date <= o.date_to
+  );
+  return hit ? hit.present : null;
+}
+
+/** Resolve which members are present on `date`. */
+export function resolvePresentMembers(
+  members: Member[],
+  date: string,
+  overrides: PresenceOverride[] = []
+): Member[] {
+  return members.filter((m) => {
+    if (!m.active) return false;
+    const ov = overrideFor(m.id, date, overrides);
+    if (ov !== null) return ov; // explicit override always wins
+    if (m.presence === "full_time") return true;
+    return eowWeekendByPattern(date);
+  });
+}

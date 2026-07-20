@@ -1,0 +1,23 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bramble">
+  <!-- paper-filled rounded-square ground -->
+  <rect width="512" height="512" rx="112" fill="#F4F1F6"/>
+  <!-- The Sprig, centred in the safe zone (~ inner 60%) -->
+  <g transform="translate(256 268) scale(2.95) translate(-50 -50)">
+    <!-- main stem -->
+    <path d="M50 14 C48 34 47 52 50 78" stroke="#3F7A54" stroke-width="4" stroke-linecap="round" fill="none"/>
+    <!-- large leaf, lower left -->
+    <path d="M49 30 C34 25 25 30 21 41 C32 44 43 41 49 34 Z" fill="#3F7A54"/>
+    <path d="M34 33 C39 35 45 36 49 33" stroke="#2C5C3D" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+    <!-- small branch, upper right -->
+    <path d="M50 40 C58 33 67 37 70 34" stroke="#3F7A54" stroke-width="3.4" stroke-linecap="round" fill="none"/>
+    <ellipse cx="71" cy="31" rx="7.5" ry="4.6" fill="#3F7A54" transform="rotate(-28 71 31)"/>
+    <!-- three hanging berries -->
+    <circle cx="39" cy="58" r="11" fill="#6B2456"/>
+    <circle cx="60" cy="53" r="10" fill="#9B3F7E"/>
+    <circle cx="51" cy="74" r="11" fill="#6B2456"/>
+    <!-- soft highlight dots -->
+    <circle cx="36" cy="55" r="2.6" fill="#804074" opacity="0.55"/>
+    <circle cx="57" cy="50" r="2.4" fill="#B05E97" opacity="0.55"/>
+    <circle cx="48" cy="71" r="2.6" fill="#804074" opacity="0.55"/>
+  </g>
+</svg>

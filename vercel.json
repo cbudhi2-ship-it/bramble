@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/rota",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/fallback",
+      "schedule": "5 18 * * *"
+    },
+    {
+      "path": "/api/cron/pocket-money",
+      "schedule": "0 0 * * 1"
+    }
+  ]
+}

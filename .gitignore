@@ -1,0 +1,45 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files — keep secrets out of git but commit the example template
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# personal / reference material — kept local, never in the (public) repo.
+# These describe a real family (names, a child's profile, custody schedule) and
+# must not be published. The app doesn't need them to build or run.
+household-app-build-spec.md
+household-app-build-spec_1.md
+bramble-mockup.html
+HANDOFF.md
+/files/
+files.zip
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
