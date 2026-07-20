@@ -79,6 +79,12 @@ export default function LogIn() {
                 <button className="loginbtn" disabled={busy}>
                   {busy ? "…" : "Sign in"}
                 </button>
+                <p className="lockstate" style={{ textAlign: "center", marginTop: 12 }}>
+                  New here?{" "}
+                  <a href="/sign-up" style={{ color: "var(--berry)", fontWeight: 650 }}>
+                    Create an account
+                  </a>
+                </p>
               </form>
             ) : (
               <>

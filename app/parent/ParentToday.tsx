@@ -84,6 +84,14 @@ export default function ParentToday({
     });
   }
 
+  async function dealToday() {
+    if (demo) return tip();
+    setBusy(true);
+    await fetch("/api/parent/deal-today", { method: "POST" });
+    setBusy(false);
+    router.refresh();
+  }
+
   async function sendThanks() {
     if (!thanksFor) return;
     if (demo) {
@@ -115,6 +123,10 @@ export default function ParentToday({
   const outstandingN = stillToDo.length + board.length;
   const allClear = outstandingN === 0 && review.length === 0 && undistributed.length === 0;
 
+  // onboarding / first-run state
+  const noChildren = !demo && members.length === 0;
+  const nothingDealt = !demo && members.length > 0 && jobs.length === 0;
+
   return (
     <div className="appshell">
       <div className="phone" style={{ height: 720 }}>
@@ -145,17 +157,22 @@ export default function ParentToday({
           <div className="scroll">
             <div className="appbar">
               <h4>Today</h4>
-              <span style={{ display: "flex", gap: 6 }}>
-                <a href={demo ? "/demo/insights" : "/parent/insights"} className="pill" style={{ background: "var(--paper-2)", color: "var(--ink-2)", textDecoration: "none" }}>
-                  Insights
+              <a href={demo ? "/demo" : "/kid"} className="pill" style={{ background: "var(--paper-2)", color: "var(--ink-2)", textDecoration: "none" }}>
+                {demo ? "All screens" : "Hand over"}
+              </a>
+            </div>
+            <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 12 }}>
+              {!demo && (
+                <a href="/parent/family" className="pill" style={{ background: "var(--paper-2)", color: "var(--ink-2)", textDecoration: "none", flex: "none" }}>
+                  Family
                 </a>
-                <a href={demo ? "/demo/jobs" : "/parent/jobs"} className="pill" style={{ background: "var(--berry)", color: "#fff", textDecoration: "none" }}>
-                  + Jobs
-                </a>
-                <a href={demo ? "/demo" : "/kid"} className="pill" style={{ background: "var(--paper-2)", color: "var(--ink-2)", textDecoration: "none" }}>
-                  {demo ? "All screens" : "Hand over"}
-                </a>
-              </span>
+              )}
+              <a href={demo ? "/demo/jobs" : "/parent/jobs"} className="pill" style={{ background: "var(--berry)", color: "#fff", textDecoration: "none", flex: "none" }}>
+                + Jobs
+              </a>
+              <a href={demo ? "/demo/insights" : "/parent/insights"} className="pill" style={{ background: "var(--paper-2)", color: "var(--ink-2)", textDecoration: "none", flex: "none" }}>
+                Insights
+              </a>
             </div>
 
             {/* the dial */}
@@ -177,30 +194,62 @@ export default function ParentToday({
               </div>
             </div>
 
+            {/* onboarding — add children before anything can be dealt */}
+            {noChildren && (
+              <a
+                href="/parent/family"
+                style={{
+                  display: "block",
+                  background: "var(--berry)",
+                  color: "#fff",
+                  borderRadius: 12,
+                  padding: "14px 16px",
+                  marginBottom: 14,
+                  textDecoration: "none",
+                }}
+              >
+                <b style={{ fontFamily: "'Bricolage Grotesque'", fontSize: 16, display: "block" }}>
+                  Add your children to get started →
+                </b>
+                <span style={{ fontSize: 12.5, opacity: 0.85 }}>
+                  Then Bramble can deal the day&apos;s jobs to whoever&apos;s home.
+                </span>
+              </a>
+            )}
+
+            {/* nothing dealt yet today — deal on demand instead of waiting for 6am */}
+            {nothingDealt && (
+              <button className="loginbtn" style={{ marginBottom: 14 }} onClick={dealToday} disabled={busy}>
+                {busy ? "…" : "Deal today's jobs now"}
+              </button>
+            )}
+
             {/* calm end-of-day summary — one line, no chasing */}
-            <div
-              style={{
-                background: allClear ? "var(--leaf-2)" : "var(--sun-2)",
-                border: `1px solid ${allClear ? "#C9E0D1" : "#EBD3A4"}`,
-                borderRadius: 12,
-                padding: "11px 13px",
-                marginBottom: 14,
-              }}
-            >
-              <div style={{ fontSize: 13, fontWeight: 650, color: allClear ? "var(--leaf)" : "#8A5F14" }}>
-                {allClear
-                  ? "Everything's sorted today. Nice."
-                  : `${done.length} done · ${outstandingN} still out there${
-                      undistributed.length ? ` · ${undistributed.length} on your list` : ""
-                    }`}
-              </div>
-              {!allClear && (
-                <div style={{ fontSize: 11.5, color: "var(--ink-3)", marginTop: 3, lineHeight: 1.45 }}>
-                  Anything undone becomes a paid bonus at 6pm — no need to chase. Unclaimed board
-                  jobs just wait till tomorrow.
+            {!noChildren && (
+              <div
+                style={{
+                  background: allClear ? "var(--leaf-2)" : "var(--sun-2)",
+                  border: `1px solid ${allClear ? "#C9E0D1" : "#EBD3A4"}`,
+                  borderRadius: 12,
+                  padding: "11px 13px",
+                  marginBottom: 14,
+                }}
+              >
+                <div style={{ fontSize: 13, fontWeight: 650, color: allClear ? "var(--leaf)" : "#8A5F14" }}>
+                  {allClear
+                    ? "Everything's sorted today. Nice."
+                    : `${done.length} done · ${outstandingN} still out there${
+                        undistributed.length ? ` · ${undistributed.length} on your list` : ""
+                      }`}
                 </div>
-              )}
-            </div>
+                {!allClear && (
+                  <div style={{ fontSize: 11.5, color: "var(--ink-3)", marginTop: 3, lineHeight: 1.45 }}>
+                    Anything undone becomes a paid bonus at 6pm — no need to chase. Unclaimed board
+                    jobs just wait till tomorrow.
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* waiting for you — the review queue */}
             <div className="grouphead">Waiting for you · {review.length}</div>

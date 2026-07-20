@@ -5,15 +5,32 @@
  * Done — plus the dial, spontaneous recognition, and the review actions.
  */
 import { redirect } from "next/navigation";
-import { getParent } from "@/lib/parent-auth";
+import { getParentOrBootstrap } from "@/lib/parent-auth";
 import { getParentToday } from "@/lib/queries";
 import ParentToday from "./ParentToday";
 
 export const dynamic = "force-dynamic";
 
 export default async function ParentPage() {
-  const parent = await getParent();
-  if (!parent) redirect("/log-in");
+  const result = await getParentOrBootstrap();
+  if (!result.ok) {
+    if (result.reason === "unauthenticated") redirect("/log-in");
+    // signed in but not on the allowlist — this is a private family app
+    return (
+      <div className="appshell">
+        <div style={{ maxWidth: 420, textAlign: "center", padding: 24 }}>
+          <h2 className="h2" style={{ fontSize: 26, margin: "0 auto 12px" }}>
+            This is a private family app
+          </h2>
+          <p className="sub" style={{ margin: "0 auto" }}>
+            Your account isn&apos;t set up for a household here. If this is your family&apos;s
+            Bramble, ask whoever set it up to add your email.
+          </p>
+        </div>
+      </div>
+    );
+  }
+  const parent = result.parent;
 
   const data = await getParentToday(parent.householdId);
   const memberName: Record<string, { name: string; colour: string }> = {};
