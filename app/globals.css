@@ -1135,6 +1135,18 @@ a {
   padding: 24px;
 }
 
+/* Full-screen app surface — fills the device, no phone frame or mock status bar.
+   Caps to a comfortable column on wide screens, edge-to-edge on a phone. */
+.fullscreen {
+  min-height: 100dvh;
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+}
+
 @media (max-width: 900px) {
   .hero,
   .split {

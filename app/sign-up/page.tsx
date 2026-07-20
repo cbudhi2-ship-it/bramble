@@ -29,14 +29,8 @@ export default function SignUp() {
   }
 
   return (
-    <div className="appshell">
-      <div className="phone">
-        <div className="screen">
-          <div className="statusbar">
-            <span>9:41</span>
-            <span>▮▮▮</span>
-          </div>
-          <div className="login">
+    <div className="fullscreen">
+      <div className="login">
             <div className="logo" style={{ marginBottom: 6 }}>
               <svg width="24" height="24" viewBox="0 0 100 100" fill="none" aria-hidden="true">
                 <ellipse cx="66" cy="24" rx="12" ry="7" fill="#3F7A54" transform="rotate(-26 66 24)" />
@@ -86,7 +80,5 @@ export default function SignUp() {
             )}
           </div>
         </div>
-      </div>
-    </div>
   );
 }
