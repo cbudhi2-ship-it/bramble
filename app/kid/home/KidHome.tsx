@@ -116,7 +116,7 @@ export default function KidHome({ name, colour, mode, balancePence, goal, dealt,
   // ---- Away Lock screen (read-only) -------------------------------------
   if (locked) {
     return (
-      <div className="appshell">
+      <div className={`appshell${demo ? "" : " app-fullwidth"}`}>
         <div className="phone">
           <div className="screen">
             <div className="statusbar">
@@ -180,7 +180,7 @@ export default function KidHome({ name, colour, mode, balancePence, goal, dealt,
   const isLow = mode === "low_demand";
 
   return (
-    <div className="appshell">
+    <div className={`appshell${demo ? "" : " app-fullwidth"}`}>
       <div className="phone">
         <div className="screen">
           <div className="statusbar">

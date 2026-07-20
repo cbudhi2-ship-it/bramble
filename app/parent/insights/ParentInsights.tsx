@@ -23,7 +23,7 @@ interface Props {
  */
 export default function ParentInsights({ insights, days, demo = false }: Props) {
   return (
-    <div className="appshell">
+    <div className={`appshell${demo ? "" : " app-fullwidth"}`}>
       <div className="phone" style={{ height: 720 }}>
         <div className="screen">
           <div className="statusbar">

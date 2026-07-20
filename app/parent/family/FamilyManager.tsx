@@ -85,7 +85,7 @@ export default function FamilyManager({ initialChildren }: { initialChildren: Ch
   }
 
   return (
-    <div className="appshell">
+    <div className="appshell app-fullwidth">
       <div className="phone" style={{ height: 760 }}>
         <div className="screen">
           <div className="statusbar">

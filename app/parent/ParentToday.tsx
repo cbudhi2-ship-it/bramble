@@ -167,7 +167,7 @@ export default function ParentToday({
   const nothingDealt = !demo && members.length > 0 && jobs.length === 0;
 
   return (
-    <div className="appshell">
+    <div className={`appshell${demo ? "" : " app-fullwidth"}`}>
       <div className="phone" style={{ height: 720 }}>
         <div className="screen">
           <div className="statusbar">

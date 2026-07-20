@@ -168,7 +168,7 @@ export default function ParentJobs({ initialJobs, demo = false }: Props) {
   }
 
   return (
-    <div className="appshell">
+    <div className={`appshell${demo ? "" : " app-fullwidth"}`}>
       <div className="phone" style={{ height: 760 }}>
         <div className="screen">
           <div className="statusbar">

@@ -59,7 +59,7 @@ export default function KidPicker() {
   // --- profile picker -----------------------------------------------------
   if (!chosen) {
     return (
-      <div className="appshell">
+      <div className="appshell app-fullwidth">
         <div className="phone">
           <div className="screen">
             <div className="statusbar">
@@ -110,7 +110,7 @@ export default function KidPicker() {
 
   // --- PIN entry ----------------------------------------------------------
   return (
-    <div className="appshell">
+    <div className="appshell app-fullwidth">
       <div className="phone">
         <div className="screen">
           <div className="statusbar">
