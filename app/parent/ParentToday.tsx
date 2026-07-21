@@ -65,6 +65,49 @@ export default function ParentToday({
   const [demoTip, setDemoTip] = useState(false);
   const [tasks, setTasks] = useState<ParentTask[]>(parentTasks);
   const [newTask, setNewTask] = useState("");
+  const [logging, setLogging] = useState<string | null>(null); // jobId whose "who did it?" is open
+
+  async function markDone(jobInstanceId: string, memberId: string | null) {
+    setLogging(null);
+    if (demo) return tip();
+    setBusy(true);
+    await fetch("/api/parent/mark-done", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobInstanceId, memberId }),
+    });
+    setBusy(false);
+    router.refresh();
+  }
+
+  const whoChooser = (jobId: string) => (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", margin: "-2px 0 10px", padding: "0 2px" }}>
+      <span style={{ fontSize: 11.5, color: "var(--ink-3)", width: "100%", marginBottom: 2 }}>Who did it?</span>
+      {members.map((m) => (
+        <button
+          key={m.id}
+          onClick={() => markDone(jobId, m.id)}
+          className="pill"
+          style={{ background: m.colour, color: "#fff", border: 0, cursor: "pointer", padding: "6px 12px" }}
+        >
+          {m.name}
+        </button>
+      ))}
+      <button
+        onClick={() => markDone(jobId, null)}
+        className="pill"
+        style={{ background: "var(--paper-2)", color: "var(--ink-2)", border: 0, cursor: "pointer", padding: "6px 12px" }}
+      >
+        A grown-up
+      </button>
+      <button
+        onClick={() => setLogging(null)}
+        style={{ background: "none", border: 0, color: "var(--ink-3)", fontSize: 12, cursor: "pointer" }}
+      >
+        cancel
+      </button>
+    </div>
+  );
 
   async function addTask() {
     const title = newTask.trim();
@@ -349,17 +392,28 @@ export default function ParentToday({
               </p>
             ) : (
               stillToDo.map((j) => (
-                <div className="jobrow" key={j.id}>
-                  <span className="ic">{j.icon}</span>
-                  <div className="tx">
-                    <b>{j.title}</b>
-                    <span>
-                      <b style={{ color: j.whoColour, fontWeight: 700 }}>{j.whoName}&apos;s job</b>
-                      {!j.is_bonus && j.fallback_pence > 0
-                        ? ` · ${formatPence(j.fallback_pence)} bonus at 6pm if not done`
-                        : ""}
-                    </span>
+                <div key={j.id}>
+                  <div className="jobrow">
+                    <span className="ic">{j.icon}</span>
+                    <div className="tx">
+                      <b>{j.title}</b>
+                      <span>
+                        <b style={{ color: j.whoColour, fontWeight: 700 }}>{j.whoName}&apos;s job</b>
+                        {!j.is_bonus && j.fallback_pence > 0
+                          ? ` · ${formatPence(j.fallback_pence)} bonus at 6pm if not done`
+                          : ""}
+                      </span>
+                    </div>
+                    <button
+                      className="go"
+                      style={{ background: "var(--leaf)", color: "#fff" }}
+                      onClick={() => setLogging(logging === j.id ? null : j.id)}
+                      disabled={busy}
+                    >
+                      Done
+                    </button>
                   </div>
+                  {logging === j.id && whoChooser(j.id)}
                 </div>
               ))
             )}
@@ -369,21 +423,31 @@ export default function ParentToday({
               <>
                 <div className="grouphead">On the board · anyone can grab · {board.length}</div>
                 {board.map((j) => (
-                  <div
-                    className="jobrow"
-                    key={j.id}
-                    style={j.is_bonus ? { borderColor: "var(--sun)", background: "var(--sun-2)" } : undefined}
-                  >
-                    <span className="ic" style={j.is_bonus ? { background: "#fff" } : undefined}>
-                      {j.is_bonus ? "⚡" : j.icon}
-                    </span>
-                    <div className="tx">
-                      <b>{j.title}</b>
-                      <span>
-                        {formatPence(j.price_pence)}
-                        {j.is_bonus ? " · nobody did it by 6pm" : " · anyone"}
+                  <div key={j.id}>
+                    <div
+                      className="jobrow"
+                      style={j.is_bonus ? { borderColor: "var(--sun)", background: "var(--sun-2)" } : undefined}
+                    >
+                      <span className="ic" style={j.is_bonus ? { background: "#fff" } : undefined}>
+                        {j.is_bonus ? "⚡" : j.icon}
                       </span>
+                      <div className="tx">
+                        <b>{j.title}</b>
+                        <span>
+                          {formatPence(j.price_pence)}
+                          {j.is_bonus ? " · nobody did it by 6pm" : " · anyone"}
+                        </span>
+                      </div>
+                      <button
+                        className="go"
+                        style={{ background: "var(--leaf)", color: "#fff" }}
+                        onClick={() => setLogging(logging === j.id ? null : j.id)}
+                        disabled={busy}
+                      >
+                        Done
+                      </button>
                     </div>
+                    {logging === j.id && whoChooser(j.id)}
                   </div>
                 ))}
               </>

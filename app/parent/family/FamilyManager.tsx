@@ -20,7 +20,18 @@ const MODE_LABEL: Record<ChildLite["mode"], string> = {
   young_visual: "Young / visual",
 };
 
-export default function FamilyManager({ initialChildren }: { initialChildren: ChildLite[] }) {
+interface Goal {
+  title: string;
+  target_pence: number;
+}
+
+export default function FamilyManager({
+  initialChildren,
+  initialGoals = {},
+}: {
+  initialChildren: ChildLite[];
+  initialGoals?: Record<string, Goal>;
+}) {
   const router = useRouter();
   const [children, setChildren] = useState(initialChildren);
   const [name, setName] = useState("");
@@ -34,9 +45,39 @@ export default function FamilyManager({ initialChildren }: { initialChildren: Ch
   const [busy, setBusy] = useState(false);
   const [tip, setTip] = useState<string | null>(null);
 
+  // per-child goals
+  const [goals, setGoals] = useState<Record<string, Goal>>(initialGoals);
+  const [goalEditing, setGoalEditing] = useState<string | null>(null);
+  const [goalTitle, setGoalTitle] = useState("");
+  const [goalTarget, setGoalTarget] = useState("");
+
   function flash(m: string) {
     setTip(m);
     setTimeout(() => setTip(null), 2000);
+  }
+
+  function startGoalEdit(childId: string) {
+    setGoalEditing(childId);
+    setGoalTitle(goals[childId]?.title ?? "");
+    setGoalTarget(goals[childId] ? (goals[childId].target_pence / 100).toFixed(2) : "");
+  }
+
+  async function saveGoal(childId: string) {
+    const title = goalTitle.trim();
+    const target_pence = Math.round((parseFloat(goalTarget.replace(/[£\s,]/g, "")) || 0) * 100);
+    setGoalEditing(null);
+    setGoals((g) => {
+      const next = { ...g };
+      if (title) next[childId] = { title, target_pence };
+      else delete next[childId];
+      return next;
+    });
+    await fetch("/api/parent/goals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memberId: childId, title, target_pence }),
+    });
+    router.refresh();
   }
 
   function toggleAnimal(key: string) {
@@ -184,20 +225,64 @@ export default function FamilyManager({ initialChildren }: { initialChildren: Ch
               <p style={{ fontSize: 12.5, color: "var(--ink-3)" }}>No children yet. Add the first one above.</p>
             )}
             {children.map((c) => (
-              <div className="jobrow" key={c.id}>
-                <span className="ic" style={{ background: c.colour_hex, color: "#fff" }}>
-                  {c.display_name[0]}
-                </span>
-                <div className="tx">
-                  <b>{c.display_name}</b>
-                  <span>
-                    {MODE_LABEL[c.mode]} · {c.presence === "full_time" ? "always here" : "weekends"} ·{" "}
-                    {c.pin_type === "picture" ? "picture PIN" : "PIN"}
+              <div key={c.id} style={{ marginBottom: 8 }}>
+                <div className="jobrow" style={{ marginBottom: 0 }}>
+                  <span className="ic" style={{ background: c.colour_hex, color: "#fff" }}>
+                    {c.display_name[0]}
                   </span>
+                  <div className="tx">
+                    <b>{c.display_name}</b>
+                    <span>
+                      {MODE_LABEL[c.mode]} · {c.presence === "full_time" ? "always here" : "weekends"} ·{" "}
+                      {c.pin_type === "picture" ? "picture PIN" : "PIN"}
+                    </span>
+                  </div>
+                  <button className="go" style={{ background: "var(--paper-2)", color: "var(--ink-2)" }} onClick={() => remove(c.id)}>
+                    Remove
+                  </button>
                 </div>
-                <button className="go" style={{ background: "var(--paper-2)", color: "var(--ink-2)" }} onClick={() => remove(c.id)}>
-                  Remove
-                </button>
+
+                {/* what this child is saving towards (shows in their Kid Mode space) */}
+                {goalEditing === c.id ? (
+                  <div style={{ padding: "8px 12px 4px" }}>
+                    <input
+                      value={goalTitle}
+                      onChange={(e) => setGoalTitle(e.target.value)}
+                      placeholder="Saving for… (e.g. roller skates)"
+                      style={{ width: "100%", font: "inherit", fontSize: 13, padding: "8px 10px", border: "1.5px solid var(--line)", borderRadius: 9, background: "#fff", color: "var(--ink)" }}
+                    />
+                    <div style={{ display: "flex", gap: 6, marginTop: 6, alignItems: "center" }}>
+                      <span style={{ fontSize: 12, color: "var(--ink-3)" }}>Target £</span>
+                      <input
+                        value={goalTarget}
+                        onChange={(e) => setGoalTarget(e.target.value)}
+                        inputMode="decimal"
+                        placeholder="40.00"
+                        style={{ width: 90, font: "inherit", fontSize: 13, padding: "8px 10px", border: "1.5px solid var(--line)", borderRadius: 9, background: "#fff", color: "var(--ink)" }}
+                      />
+                      <button className="go" style={{ background: "var(--berry)", color: "#fff", marginLeft: "auto" }} onClick={() => saveGoal(c.id)}>
+                        Save goal
+                      </button>
+                      <button onClick={() => setGoalEditing(null)} style={{ background: "none", border: 0, color: "var(--ink-3)", fontSize: 12, cursor: "pointer" }}>
+                        cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 12px 2px" }}>
+                    <span style={{ fontSize: 12, color: "var(--ink-3)", flex: 1 }}>
+                      {goals[c.id]
+                        ? `🎯 Saving for ${goals[c.id].title}${goals[c.id].target_pence ? ` · £${(goals[c.id].target_pence / 100).toFixed(2)}` : ""}`
+                        : "No goal set yet"}
+                    </span>
+                    <button
+                      onClick={() => startGoalEdit(c.id)}
+                      style={{ background: "none", border: 0, color: "var(--berry)", fontSize: 12, fontWeight: 650, cursor: "pointer" }}
+                    >
+                      {goals[c.id] ? "Edit goal" : "Set a goal"}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
