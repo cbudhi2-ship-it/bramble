@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatPence } from "@/lib/money";
 import { normalizeRoom } from "@/lib/rooms";
+import { JOB_SUGGESTIONS, type JobSuggestion } from "@/lib/job-suggestions";
 
 export interface JobLite {
   id: string;
@@ -92,6 +93,7 @@ export default function ParentJobs({ initialJobs, demo = false }: Props) {
   const [busy, setBusy] = useState(false);
   const [tip, setTip] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showIdeas, setShowIdeas] = useState(false);
 
   function flash(msg: string) {
     setTip(msg);
@@ -188,6 +190,52 @@ export default function ParentJobs({ initialJobs, demo = false }: Props) {
     router.refresh();
   }
 
+  async function addSuggestion(s: JobSuggestion) {
+    const payload = {
+      title: s.title,
+      kind: s.kind,
+      room: s.room ?? "",
+      recurrence: "daily",
+      people_needed: 1,
+      price_pence: s.kind === "paid" ? s.price_pence : 0,
+      fallback_pence: s.fallback_pence,
+      framing_ambient: s.framing_ambient,
+      age_min: s.age_min,
+    };
+    const local: JobLite = {
+      id: `sug-${Date.now()}`,
+      title: s.title,
+      kind: s.kind,
+      price_pence: payload.price_pence,
+      fallback_pence: s.fallback_pence,
+      framing_ambient: s.framing_ambient,
+      recurrence: "daily",
+      room: normalizeRoom(s.room),
+      people_needed: 1,
+      age_min: s.age_min,
+    };
+    if (demo) {
+      setJobs((j) => [local, ...j]);
+      flash(`Added ${s.title}.`);
+      return;
+    }
+    setJobs((j) => [local, ...j]); // optimistic
+    const res = await fetch("/api/parent/jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      const { job } = await res.json();
+      if (job) setJobs((j) => j.map((x) => (x.id === local.id ? (job as JobLite) : x)));
+      flash(`Added ${s.title}.`);
+      router.refresh();
+    } else {
+      setJobs((j) => j.filter((x) => x.id !== local.id));
+      flash("Couldn't add that one.");
+    }
+  }
+
   const isPaid = kind === "paid";
 
   // group the library by room, case-insensitively so "Bedroom" and "bedroom"
@@ -199,6 +247,10 @@ export default function ParentJobs({ initialJobs, demo = false }: Props) {
   }
   // existing room names, for the add-form autocomplete (so parents reuse them)
   const existingRooms = [...byRoom.keys()].filter((k) => k !== "Anywhere / no room").sort();
+
+  // suggestions not already in the library (matched by title, case-insensitively)
+  const existingTitles = new Set(jobs.map((j) => j.title.trim().toLowerCase()));
+  const ideas = JOB_SUGGESTIONS.filter((s) => !existingTitles.has(s.title.toLowerCase()));
 
   return (
     <div className={`appshell${demo ? "" : " app-fullwidth"}`}>
@@ -338,6 +390,70 @@ export default function ParentJobs({ initialJobs, demo = false }: Props) {
                 </button>
               )}
             </div>
+
+            {/* ---- suggestions: tap to add a common job ---- */}
+            {ideas.length > 0 && (
+              <div style={{ marginTop: 20 }}>
+                <button
+                  onClick={() => setShowIdeas((s) => !s)}
+                  style={{
+                    background: "none",
+                    border: 0,
+                    color: "var(--berry)",
+                    fontSize: 13,
+                    fontWeight: 650,
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
+                >
+                  {showIdeas ? "Hide suggestions" : "Can't think of jobs? Tap for ideas"} {showIdeas ? "▲" : "▾"}
+                </button>
+                {showIdeas && (
+                  <>
+                    <p style={{ fontSize: 11.5, color: "var(--ink-3)", margin: "8px 0 10px", lineHeight: 1.5 }}>
+                      Tap any to add it. You can edit the price or details afterwards.
+                    </p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                      {ideas.map((s) => {
+                        const cost = s.kind === "paid" ? s.price_pence : s.fallback_pence;
+                        return (
+                          <button
+                            key={s.title}
+                            onClick={() => addSuggestion(s)}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                              background: "#fff",
+                              border: "1px solid var(--line)",
+                              borderRadius: 99,
+                              padding: "7px 12px",
+                              fontSize: 12.5,
+                              cursor: "pointer",
+                              font: "inherit",
+                              color: "var(--ink)",
+                            }}
+                          >
+                            <span style={{ color: "var(--berry)", fontWeight: 800 }}>+</span>
+                            {s.title}
+                            <span
+                              style={{
+                                fontSize: 10.5,
+                                fontWeight: 700,
+                                color: s.kind === "paid" ? "var(--kid-teal)" : "var(--leaf)",
+                              }}
+                            >
+                              {formatPence(cost)}
+                              {s.kind === "paid" ? "" : " · 6pm"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* ---- library, grouped by room ---- */}
             <div className="grouphead" style={{ marginTop: 22 }}>
