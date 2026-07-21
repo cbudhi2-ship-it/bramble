@@ -101,6 +101,14 @@ export default function ParentToday({
     setTimeout(() => setDemoTip(false), 1800);
   }
 
+  async function handOver() {
+    // set the signed household cookie so the Kid Mode picker knows whose
+    // children to show, THEN drop into the picker
+    const res = await fetch("/api/parent/handover", { method: "POST" });
+    if (res.ok) router.push("/kid");
+    else tip();
+  }
+
   async function review1(jobInstanceId: string, action: string, percent?: number) {
     if (demo) return tip();
     setBusy(true);
@@ -196,9 +204,19 @@ export default function ParentToday({
           <div className="scroll">
             <div className="appbar">
               <h4>Today</h4>
-              <a href={demo ? "/demo" : "/kid"} className="pill" style={{ background: "var(--paper-2)", color: "var(--ink-2)", textDecoration: "none" }}>
-                {demo ? "All screens" : "Hand over"}
-              </a>
+              {demo ? (
+                <a href="/demo" className="pill" style={{ background: "var(--paper-2)", color: "var(--ink-2)", textDecoration: "none" }}>
+                  All screens
+                </a>
+              ) : (
+                <button
+                  onClick={handOver}
+                  className="pill"
+                  style={{ background: "var(--paper-2)", color: "var(--ink-2)", border: 0, cursor: "pointer", fontFamily: "inherit" }}
+                >
+                  Hand over
+                </button>
+              )}
             </div>
             <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 12 }}>
               {!demo && (
