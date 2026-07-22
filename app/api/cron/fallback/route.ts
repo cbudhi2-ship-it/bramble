@@ -43,6 +43,16 @@ export async function GET(req: Request) {
   const { data: households } = await supabase.from("household").select("id, load_state");
   if (!households) return NextResponse.json({ ok: true, swept: 0 });
 
+  // Low-demand (PDA) children work at their own pace: their dealt tasks are
+  // never swept off their dashboard by the deadline — they stay assigned and
+  // tickable all evening. Only these members are exempt.
+  const { data: lowDemand } = await supabase
+    .from("member")
+    .select("id")
+    .eq("mode", "low_demand")
+    .eq("active", true);
+  const pacedYourself = new Set((lowDemand ?? []).map((m) => m.id));
+
   let swept = 0;
 
   for (const household of households) {
@@ -50,7 +60,7 @@ export async function GET(req: Request) {
     // creation-time fallback price.
     const { data: stale } = await supabase
       .from("job_instance")
-      .select("id, job_def:job_def_id(fallback_pence)")
+      .select("id, assigned_to, job_def:job_def_id(fallback_pence)")
       .eq("household_id", household.id)
       .in("status", ["open", "claimed"])
       .eq("is_bonus", false)
@@ -61,6 +71,9 @@ export async function GET(req: Request) {
     const mult = loadMultiplier(household.load_state as LoadState);
 
     for (const row of stale) {
+      // leave a PDA child's task with them — no deadline snatch
+      if (row.assigned_to && pacedYourself.has(row.assigned_to)) continue;
+
       const def = row.job_def as unknown as { fallback_pence: number } | null;
       const price = Math.round((def?.fallback_pence ?? 75) * mult);
       const { error } = await supabase
