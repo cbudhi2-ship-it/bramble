@@ -53,7 +53,29 @@ export default function KidHome({ name, colour, mode, balancePence, goal, dealt,
   const [showBalance, setShowBalance] = useState(mode !== "low_demand");
   const [locked, setLocked] = useState(false);
   const [demoTip, setDemoTip] = useState(false);
+  const [curGoal, setCurGoal] = useState<Goal | null>(goal);
+  const [editGoal, setEditGoal] = useState(false);
+  const [gTitle, setGTitle] = useState(goal?.title ?? "");
+  const [gTarget, setGTarget] = useState(goal ? (goal.target_pence / 100).toFixed(2) : "");
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  async function saveGoal() {
+    const title = gTitle.trim();
+    const target_pence = Math.round((parseFloat(gTarget.replace(/[£\s,]/g, "")) || 0) * 100);
+    setEditGoal(false);
+    setCurGoal(title ? { title, target_pence } : null);
+    if (demo) {
+      setDemoTip(true);
+      setTimeout(() => setDemoTip(false), 1800);
+      return;
+    }
+    await fetch("/api/kid/goal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, target_pence }),
+    });
+    router.refresh();
+  }
 
   const endSession = useCallback(async () => {
     if (demo) return; // the demo never logs out or redirects
@@ -111,7 +133,10 @@ export default function KidHome({ name, colour, mode, balancePence, goal, dealt,
   }
 
   const light = `${colour}22`;
-  const pct = goal ? Math.min(100, Math.round((balancePence / goal.target_pence) * 100)) : 0;
+  const pct =
+    curGoal && curGoal.target_pence > 0
+      ? Math.min(100, Math.round((balancePence / curGoal.target_pence) * 100))
+      : 0;
 
   // ---- Away Lock screen (read-only) -------------------------------------
   if (locked) {
@@ -149,10 +174,10 @@ export default function KidHome({ name, colour, mode, balancePence, goal, dealt,
                   Look at anything you like. Ticking jobs off needs a grown-up nearby.
                 </div>
               </div>
-              {goal && (
+              {curGoal && (
                 <div className="goalcard" style={{ background: colour }}>
                   <div className="gl">Saving for</div>
-                  <div className="gt">{goal.title}</div>
+                  <div className="gt">{curGoal.title}</div>
                   <div className="bar">
                     <i style={{ width: `${pct}%` }} />
                   </div>
@@ -220,30 +245,46 @@ export default function KidHome({ name, colour, mode, balancePence, goal, dealt,
               )}
             </div>
 
-            {/* low-demand: downtime sits ABOVE the jobs */}
-            {isLow && (
-              <div className="downtime">
-                <b>Your time</b>
-                <span>Nothing&apos;s expected of you until teatime.</span>
-              </div>
-            )}
-
-            {/* young/visual: token jar instead of money */}
-            {isYoung ? (
-              <div className="jar">
-                <div className="jt">Your jar</div>
-                <div className="tokens">
-                  {Array.from({ length: 10 }).map((_, i) =>
-                    i < Math.min(10, Math.floor(balancePence / 20)) ? "🟠" : "⚪"
-                  )}
+            {/* what you're working towards — a bar at the top, for every child */}
+            <div className="goalcard" style={{ background: colour }}>
+              {editGoal || !curGoal ? (
+                <div>
+                  <div className="gl">{curGoal ? "Change your goal" : "What are you saving for?"}</div>
+                  <input
+                    value={gTitle}
+                    onChange={(e) => setGTitle(e.target.value)}
+                    placeholder="e.g. roller skates"
+                    style={{ width: "100%", font: "inherit", fontSize: 15, padding: "9px 11px", borderRadius: 9, border: 0, background: "rgba(255,255,255,.92)", color: "var(--ink)", marginTop: 6 }}
+                  />
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 9 }}>
+                    <span style={{ fontSize: 11.5, opacity: 0.9 }}>Costs about £</span>
+                    <input
+                      value={gTarget}
+                      onChange={(e) => setGTarget(e.target.value)}
+                      inputMode="decimal"
+                      placeholder="40"
+                      style={{ width: 62, font: "inherit", fontSize: 13, padding: "8px 9px", borderRadius: 9, border: 0, background: "rgba(255,255,255,.92)", color: "var(--ink)" }}
+                    />
+                    <button
+                      onClick={saveGoal}
+                      style={{ marginLeft: "auto", background: "#fff", color: colour, border: 0, borderRadius: 99, padding: "8px 18px", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}
+                    >
+                      Save
+                    </button>
+                    {curGoal && (
+                      <button
+                        onClick={() => setEditGoal(false)}
+                        style={{ background: "none", border: 0, color: "#fff", opacity: 0.85, fontSize: 12, cursor: "pointer" }}
+                      >
+                        cancel
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="js">Tokens turn into pocket money on payday.</div>
-              </div>
-            ) : (
-              goal && (
-                <div className="goalcard" style={{ background: colour }}>
+              ) : (
+                <>
                   <div className="gl">Saving for</div>
-                  <div className="gt">{goal.title}</div>
+                  <div className="gt">{curGoal.title}</div>
                   <div className="bar">
                     <i style={{ width: `${pct}%` }} />
                   </div>
@@ -257,13 +298,46 @@ export default function KidHome({ name, colour, mode, balancePence, goal, dealt,
                       </button>
                     ) : (
                       <span>
-                        {formatPence(balancePence)} of {formatPence(goal.target_pence)}
+                        {curGoal.target_pence > 0
+                          ? `${formatPence(balancePence)} of ${formatPence(curGoal.target_pence)}`
+                          : `${formatPence(balancePence)} saved`}
                       </span>
                     )}
-                    <span>{pct}%</span>
+                    <span>{curGoal.target_pence > 0 ? `${pct}%` : ""}</span>
                   </div>
+                  <button
+                    onClick={() => {
+                      setGTitle(curGoal.title);
+                      setGTarget(curGoal.target_pence ? (curGoal.target_pence / 100).toFixed(2) : "");
+                      setEditGoal(true);
+                    }}
+                    style={{ background: "none", border: 0, color: "#fff", opacity: 0.85, fontSize: 11, cursor: "pointer", marginTop: 9, textDecoration: "underline", padding: 0, fontFamily: "inherit" }}
+                  >
+                    Change what I&apos;m saving for
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* low-demand: downtime sits ABOVE the jobs */}
+            {isLow && (
+              <div className="downtime">
+                <b>Your time</b>
+                <span>Nothing&apos;s expected of you until teatime.</span>
+              </div>
+            )}
+
+            {/* young/visual: token jar (their money, alongside the goal bar) */}
+            {isYoung && (
+              <div className="jar">
+                <div className="jt">Your jar</div>
+                <div className="tokens">
+                  {Array.from({ length: 10 }).map((_, i) =>
+                    i < Math.min(10, Math.floor(balancePence / 20)) ? "🟠" : "⚪"
+                  )}
                 </div>
-              )
+                <div className="js">Tokens turn into pocket money on payday.</div>
+              </div>
             )}
 
             {/* dealt jobs */}
