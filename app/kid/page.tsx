@@ -56,6 +56,32 @@ export default function KidPicker() {
     if (next.length === PICTURE_PIN_LENGTH) attempt({ sequence: next });
   }
 
+  // physical keyboard for the numeric PIN — type digits on a desktop, Backspace
+  // to delete, Escape to pick a different child.
+  useEffect(() => {
+    if (!chosen || chosen.pin_type !== "numeric") return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key >= "0" && e.key <= "9") {
+        e.preventDefault();
+        pressDigit(e.key);
+      } else if (e.key === "Backspace") {
+        e.preventDefault();
+        setDigits((d) => d.slice(0, -1));
+        setError(null);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        setChosen(null);
+        setDigits("");
+        setSeq([]);
+        setError(null);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // re-bind as digits change so pressDigit sees the current value
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chosen, digits]);
+
   // --- profile picker -----------------------------------------------------
   if (!chosen) {
     return (
