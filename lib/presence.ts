@@ -33,21 +33,6 @@ export function ageAt(dob: string | null, date: string): number | null {
   return age;
 }
 
-/** ISO-week ordinal since epoch — used for "every OTHER weekend" parity. */
-function weekOrdinal(date: string): number {
-  const d = parseDate(date);
-  return Math.floor(d.getTime() / (7 * 24 * 60 * 60 * 1000));
-}
-
-/**
- * Is an eow member here this weekend by the default pattern? Even-week parity
- * is a placeholder rule; real schedules are driven by presence_override, which
- * takes precedence in resolvePresence().
- */
-function eowWeekendByPattern(date: string): boolean {
-  return isWeekend(date) && weekOrdinal(date) % 2 === 0;
-}
-
 function overrideFor(
   memberId: string,
   date: string,
@@ -59,7 +44,16 @@ function overrideFor(
   return hit ? hit.present : null;
 }
 
-/** Resolve which members are present on `date`. */
+/**
+ * Resolve which members are present on `date`.
+ *
+ * Presence is PARENT-DRIVEN, not inferred: every active child is treated as home
+ * by default, so the day's jobs deal evenly across all of them. A child who is
+ * away (at their other home, on holiday) is marked absent for those days with a
+ * presence_override, which always wins. (An earlier version guessed an
+ * every-other-weekend pattern for "weekends/holidays" children — that guess was
+ * unreliable and could pile every job onto the one full-time child.)
+ */
 export function resolvePresentMembers(
   members: Member[],
   date: string,
@@ -68,8 +62,7 @@ export function resolvePresentMembers(
   return members.filter((m) => {
     if (!m.active) return false;
     const ov = overrideFor(m.id, date, overrides);
-    if (ov !== null) return ov; // explicit override always wins
-    if (m.presence === "full_time") return true;
-    return eowWeekendByPattern(date);
+    if (ov !== null) return ov; // explicit away/here override wins
+    return true; // everyone's home by default
   });
 }

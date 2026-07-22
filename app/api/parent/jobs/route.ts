@@ -70,7 +70,9 @@ export async function POST(req: Request) {
       recurrence,
       room,
       people_needed,
-      low_demand_safe: Boolean(body?.low_demand_safe),
+      // safe for a low-demand child by default; a parent can later flag the
+      // highest-stakes jobs to keep them out of that child's deal
+      low_demand_safe: body?.low_demand_safe === false ? false : true,
       framing_direct: title,
       framing_ambient: (body?.framing_ambient ?? "").toString().trim() || title,
       active: true,

@@ -34,6 +34,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     recurrence: FREQUENCIES.includes(body?.recurrence) ? body.recurrence : "daily",
     room: normalizeRoom(body?.room),
     people_needed: Math.min(4, Math.max(1, Math.round(Number(body?.people_needed) || 1))),
+    // default safe for a low-demand child (re-saving an old job fixes it)
+    low_demand_safe: body?.low_demand_safe === false ? false : true,
     framing_direct: title,
     framing_ambient: (body?.framing_ambient ?? "").toString().trim() || title,
   };
