@@ -267,6 +267,11 @@ export default function ParentToday({
                   Family
                 </a>
               )}
+              {!demo && (
+                <a href="/parent/presence" className="pill" style={{ background: "var(--paper-2)", color: "var(--ink-2)", textDecoration: "none", flex: "none" }}>
+                  Who&apos;s here
+                </a>
+              )}
               <a href={demo ? "/demo/jobs" : "/parent/jobs"} className="pill" style={{ background: "var(--berry)", color: "#fff", textDecoration: "none", flex: "none" }}>
                 + Jobs
               </a>
