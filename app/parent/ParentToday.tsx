@@ -66,6 +66,7 @@ export default function ParentToday({
   const [tasks, setTasks] = useState<ParentTask[]>(parentTasks);
   const [newTask, setNewTask] = useState("");
   const [logging, setLogging] = useState<string | null>(null); // jobId whose "who did it?" is open
+  const [confirmReshuffle, setConfirmReshuffle] = useState(false);
 
   async function markDone(jobInstanceId: string, memberId: string | null) {
     setLogging(null);
@@ -180,6 +181,18 @@ export default function ParentToday({
     await fetch("/api/parent/deal-today", { method: "POST" });
     setBusy(false);
     router.refresh();
+  }
+
+  // re-deal today from scratch (two-tap confirm, since it clears today's jobs)
+  async function reshuffle() {
+    if (demo) return tip();
+    if (!confirmReshuffle) {
+      setConfirmReshuffle(true);
+      setTimeout(() => setConfirmReshuffle(false), 4000);
+      return;
+    }
+    setConfirmReshuffle(false);
+    await dealToday();
   }
 
   async function sendThanks() {
@@ -326,6 +339,33 @@ export default function ParentToday({
             {nothingDealt && (
               <button className="loginbtn" style={{ marginBottom: 14 }} onClick={dealToday} disabled={busy}>
                 {busy ? "…" : "Deal today's jobs now"}
+              </button>
+            )}
+
+            {/* re-deal today (available once jobs exist) */}
+            {!demo && members.length > 0 && jobs.length > 0 && (
+              <button
+                onClick={reshuffle}
+                disabled={busy}
+                style={{
+                  width: "100%",
+                  marginBottom: 14,
+                  background: confirmReshuffle ? "var(--berry)" : "transparent",
+                  color: confirmReshuffle ? "#fff" : "var(--berry)",
+                  border: "1.5px solid var(--berry)",
+                  borderRadius: 10,
+                  padding: "11px",
+                  fontSize: 13.5,
+                  fontWeight: 650,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                {busy
+                  ? "…"
+                  : confirmReshuffle
+                    ? "Tap again — this re-deals today from scratch"
+                    : "↻ Re-shuffle today's jobs"}
               </button>
             )}
 
