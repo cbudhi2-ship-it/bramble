@@ -29,7 +29,7 @@ export default async function DemoScreen({ params }: { params: Promise<{ who: st
     screen = <ParentInsights {...getDemoInsights()} demo />;
   } else if (who === "meals") {
     const m = getDemoMeals();
-    screen = <MealsManager ideas={m.ideas} children={m.children} plan={null} weekLabel={m.weekLabel} demo />;
+    screen = <MealsManager ideas={m.ideas} children={m.children} plan={null} weekLabel={m.weekLabel} demoSamples={m.samples} demo />;
   } else {
     const kid = getDemoKid(who);
     if (!kid) notFound();

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { planMeals, type ChildFoods, type MealDay } from "@/lib/meals";
+import type { MealDay } from "@/lib/meals";
 
 interface Child {
   id: string;
@@ -16,11 +16,19 @@ interface Props {
   plan: MealDay[] | null;
   weekLabel: string;
   demo?: boolean;
+  demoSamples?: MealDay[][];
 }
 
 const IDEA_SLOTS = 6;
 
-export default function MealsManager({ ideas, children, plan, weekLabel, demo = false }: Props) {
+export default function MealsManager({
+  ideas,
+  children,
+  plan,
+  weekLabel,
+  demo = false,
+  demoSamples = [],
+}: Props) {
   const router = useRouter();
   const [ideaList, setIdeaList] = useState<string[]>(() => {
     const a = [...ideas];
@@ -34,7 +42,7 @@ export default function MealsManager({ ideas, children, plan, weekLabel, demo = 
 
   function flash(m: string) {
     setTip(m);
-    setTimeout(() => setTip(null), 2400);
+    setTimeout(() => setTip(null), 2600);
   }
 
   const hasInput =
@@ -57,10 +65,11 @@ export default function MealsManager({ ideas, children, plan, weekLabel, demo = 
   async function generate() {
     if (!hasInput) return flash("Add some foods or ideas first.");
     if (demo) {
-      const kids: ChildFoods[] = children.map((c) => ({ name: c.name, foods: c.foods }));
-      setCurPlan(planMeals(kids, ideaList, `demo:${demoNonce}`));
-      setDemoNonce((n) => n + 1);
-      flash("Here's a week — sign in to save it.");
+      if (demoSamples.length) {
+        setCurPlan(demoSamples[demoNonce % demoSamples.length]);
+        setDemoNonce((n) => n + 1);
+      }
+      flash("A sample week — sign in to cook up your own.");
       return;
     }
     setBusy(true);
@@ -69,11 +78,27 @@ export default function MealsManager({ ideas, children, plan, weekLabel, demo = 
     setBusy(false);
     if (res.ok && data?.plan) {
       setCurPlan(data.plan);
-      flash("Week planned.");
+      flash(data.ai ? "Fresh recipes, made for your family." : "Week planned.");
     } else {
       flash(data?.error ?? "Couldn't make a plan.");
     }
   }
+
+  const slot = (label: string, meal: MealDay["lunch"]) => (
+    <div style={{ marginBottom: 6 }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+        <span style={{ fontSize: 11, color: "var(--ink-3)", width: 52, flex: "none" }}>{label}</span>
+        <span style={{ fontSize: 13.5, color: "var(--ink)", fontWeight: 600 }}>
+          {meal.name || "—"}
+        </span>
+      </div>
+      {meal.recipe && (
+        <p style={{ fontSize: 12, color: "var(--ink-2)", lineHeight: 1.5, margin: "3px 0 0 60px" }}>
+          {meal.recipe}
+        </p>
+      )}
+    </div>
+  );
 
   return (
     <div className={`appshell${demo ? "" : " app-fullwidth"}`}>
@@ -97,18 +122,17 @@ export default function MealsManager({ ideas, children, plan, weekLabel, demo = 
             </div>
 
             <p style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.55, marginBottom: 14 }}>
-              A week&apos;s lunches and dinners from what everyone actually eats — the children&apos;s
-              favourites plus your ideas. Make it once and it&apos;s set for the week.
+              New recipes for the week, dreamt up from what everyone loves — so no
+              one&apos;s dish gets picked and the rest wait. Make it once and it&apos;s set.
             </p>
 
-            {/* the button + the plan */}
             <button
               className="loginbtn"
               style={{ marginTop: 0, width: "100%" }}
               onClick={generate}
               disabled={busy || !hasInput}
             >
-              {curPlan ? "↻ Shuffle a new week" : "🍽️ Give us a week's meal planner"}
+              {busy ? "Cooking up a week…" : curPlan ? "↻ Give us a fresh week" : "🍽️ Give us a week's meal planner"}
             </button>
 
             {curPlan && (
@@ -124,14 +148,8 @@ export default function MealsManager({ ideas, children, plan, weekLabel, demo = 
                     <div style={{ fontFamily: "'Bricolage Grotesque'", fontWeight: 700, fontSize: 13.5, marginBottom: 6 }}>
                       {d.day}
                     </div>
-                    <div style={{ display: "flex", gap: 8, alignItems: "baseline", marginBottom: 3 }}>
-                      <span style={{ fontSize: 11, color: "var(--ink-3)", width: 52, flex: "none" }}>🥪 Lunch</span>
-                      <span style={{ fontSize: 13.5, color: "var(--ink)" }}>{d.lunch || "—"}</span>
-                    </div>
-                    <div style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-                      <span style={{ fontSize: 11, color: "var(--ink-3)", width: 52, flex: "none" }}>🍽️ Dinner</span>
-                      <span style={{ fontSize: 13.5, color: "var(--ink)" }}>{d.dinner || "—"}</span>
-                    </div>
+                    {slot("🥪 Lunch", d.lunch)}
+                    {slot("🍽️ Dinner", d.dinner)}
                   </div>
                 ))}
               </>

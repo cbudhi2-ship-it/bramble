@@ -1,20 +1,11 @@
 /**
- * Weekly meal planner (spec: family food option).
+ * Weekly meal planner types + a deterministic fallback.
  *
- * The family gives two things:
- *   - each child's favourite foods (up to 3 each), and
- *   - the grown-ups' meal ideas (up to 6).
- * From that collective pot this builds lunch + dinner for 7 days.
- *
- * It's deterministic — seeded by the week plus a nonce — so a generated week is
- * stable ("stuck") once saved, and pressing the button again gives a fresh,
- * reproducible shuffle rather than a random one. No external service, no cost.
- *
- * The mental model: the grown-ups' ideas anchor the dinners (proper meals), and
- * the children's favourites drive the lunches — but each pool backs the other
- * up, so it always produces a full week from whatever it's given. Lunches are
- * built by interleaving the children round-robin, so everyone's favourites turn
- * up across the week rather than one child's taking over.
+ * The real planner (app/api/parent/meal-plan) asks Claude to *invent* a week of
+ * new recipes that blend everyone's favourite foods — so no child's exact dish
+ * is "picked" over another's. This module holds the shared types and a simple
+ * offline fallback used only when the AI isn't configured or a call fails, so
+ * the feature degrades to something rather than nothing.
  */
 import { seededShuffle } from "./rota.ts";
 
@@ -23,10 +14,15 @@ export interface ChildFoods {
   foods: string[];
 }
 
+export interface Meal {
+  name: string;
+  recipe: string;
+}
+
 export interface MealDay {
   day: string;
-  lunch: string;
-  dinner: string;
+  lunch: Meal;
+  dinner: Meal;
 }
 
 export const DAY_NAMES = [
@@ -40,7 +36,7 @@ export const DAY_NAMES = [
 ];
 
 /** Trim, drop blanks, and de-dupe case-insensitively (keeping first spelling). */
-function clean(items: string[]): string[] {
+export function cleanList(items: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const raw of items) {
@@ -57,11 +53,8 @@ function clean(items: string[]): string[] {
 /** Interleave the children's favourites round-robin: everyone's first choice,
  * then everyone's second, and so on — so no single child dominates the week. */
 function interleaveChildFoods(children: ChildFoods[], seed: string): string[] {
-  const lists = children
-    .map((c) => clean(c.foods))
-    .filter((l) => l.length > 0);
+  const lists = children.map((c) => cleanList(c.foods)).filter((l) => l.length > 0);
   if (lists.length === 0) return [];
-  // shuffle which child goes first each round, but keep it reproducible
   const order = seededShuffle(
     lists.map((_, i) => i),
     `${seed}:kids`
@@ -73,24 +66,18 @@ function interleaveChildFoods(children: ChildFoods[], seed: string): string[] {
       if (round < lists[i].length) out.push(lists[i][round]);
     }
   }
-  return clean(out); // a food two children both love only needs to appear once
+  return cleanList(out);
 }
 
-/** Fill `n` slots by walking a pre-ordered sequence (primary picks first, then
- * a backup pool), avoiding an immediate repeat and (optionally) clashing with a
- * same-day companion slot. Cycles the sequence only once the whole run is used. */
-function fillFromOrder(
-  n: number,
-  order: string[],
-  avoidSameDay?: string[]
-): string[] {
+/** Fill `n` slots by walking a pre-ordered sequence, avoiding an immediate
+ * repeat and (optionally) clashing with a same-day companion slot. */
+function fillFromOrder(n: number, order: string[], avoidSameDay?: string[]): string[] {
   if (order.length === 0) return Array.from({ length: n }, () => "");
   const out: string[] = [];
   let idx = 0;
   for (let day = 0; day < n; day++) {
     let pick = order[idx % order.length];
     let tries = 0;
-    // skip if it repeats yesterday's pick or clashes with the same day's other meal
     while (
       order.length > 1 &&
       tries < order.length &&
@@ -107,21 +94,17 @@ function fillFromOrder(
 }
 
 /**
- * Build a 7-day plan. `seed` should encode the week (so it's stable) plus any
- * regenerate nonce (so "shuffle again" differs). Returns 7 { day, lunch, dinner }.
+ * Offline fallback: slot the family's actual foods into 7 days (no invented
+ * recipes — just the names). Used only when the AI planner is unavailable.
  */
-export function planMeals(
+export function planMealsFallback(
   children: ChildFoods[],
   parentIdeas: string[],
   seed: string
 ): MealDay[] {
-  const ideas = clean(parentIdeas);
+  const ideas = cleanList(parentIdeas);
   const childPool = interleaveChildFoods(children, seed);
 
-  // Dinners exhaust the grown-ups' proper meals first (shuffled, so distinct),
-  // and only spill into child favourites for any slots left over. Lunches lead
-  // with the children's favourites (already fairly interleaved), backed by the
-  // ideas. Each pool backs the other so a week always fills.
   const dinnerOrder = [
     ...seededShuffle(ideas, `${seed}:dinner`),
     ...seededShuffle(childPool, `${seed}:dinner-fill`),
@@ -133,7 +116,7 @@ export function planMeals(
 
   return DAY_NAMES.map((day, i) => ({
     day,
-    lunch: lunches[i] ?? "",
-    dinner: dinners[i] ?? "",
+    lunch: { name: lunches[i] ?? "", recipe: "" },
+    dinner: { name: dinners[i] ?? "", recipe: "" },
   }));
 }

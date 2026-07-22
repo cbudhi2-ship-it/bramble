@@ -205,7 +205,30 @@ export function getDemoParent() {
   };
 }
 
-/** Sample data for the /demo meals screen (grown-up ideas + children's foods). */
+/** Sample data for the /demo meals screen (grown-up ideas + children's foods).
+ * The demo can't call the AI, so it ships two pre-baked "what Claude makes"
+ * weeks — new recipes that weave in everyone's favourites. */
+const DEMO_MEAL_WEEKS = [
+  [
+    { day: "Monday", lunch: { name: "Pesto & halloumi wraps", recipe: "Warm halloumi and a smear of pesto in a wrap with sweetcorn — Mabel's and Posy's favourites in one." }, dinner: { name: "Hidden-veg spaghetti bolognese", recipe: "Classic bolognese with grated veg blended into the sauce; serve over spaghetti." } },
+    { day: "Tuesday", lunch: { name: "Fish-finger sarnie & peas", recipe: "Crispy fish fingers in soft bread with a squeeze of ketchup and buttery peas on the side." }, dinner: { name: "Mild chicken & mango curry with rice", recipe: "Gentle chicken curry sweetened with mango, served over fluffy rice." } },
+    { day: "Wednesday", lunch: { name: "Cheesy sweetcorn pancakes", recipe: "Savoury pancakes studded with sweetcorn and cheese, cooked till golden." }, dinner: { name: "Sausage & bean one-pot with mash", recipe: "Sausages simmered with beans in a rich tomato sauce, spooned over creamy mash." } },
+    { day: "Thursday", lunch: { name: "Pasta & pea pesto pot", recipe: "Quick pasta stirred through pesto with peas — a warm lunchbox winner." }, dinner: { name: "Build-your-own pizza night", recipe: "Everyone tops their own base; sweetcorn, halloumi and leftover sausage on offer." } },
+    { day: "Friday", lunch: { name: "Jacket potato & beans", recipe: "Fluffy baked potato loaded with beans and a little grated cheese." }, dinner: { name: "Roast chicken traybake", recipe: "Chicken roasted with vegetables in one tray; rice or bread to mop up." } },
+    { day: "Saturday", lunch: { name: "Pancake brunch", recipe: "Stacks of pancakes with yoghurt and strawberries — Rowan and Posy approved." }, dinner: { name: "Veggie stir fry with rice", recipe: "Colourful stir-fried veg and rice with a mild soy-honey sauce." } },
+    { day: "Sunday", lunch: { name: "Halloumi & sweetcorn fritters", recipe: "Golden fritters of halloumi and sweetcorn, lovely dipped in yoghurt." }, dinner: { name: "Family chilli with rice", recipe: "A mild chilli with beans over rice; a dollop of yoghurt to cool it." } },
+  ],
+  [
+    { day: "Monday", lunch: { name: "Sausage & bean wrap", recipe: "Sliced sausage and warm beans rolled in a wrap for a hearty start to the week." }, dinner: { name: "Chicken & mango rice bowls", recipe: "Diced chicken with mango and peas over rice, in bowls everyone builds themselves." } },
+    { day: "Tuesday", lunch: { name: "Pesto pasta with peas", recipe: "Pasta tossed in pesto with sweet peas — quick and green." }, dinner: { name: "Homemade fish-finger tacos", recipe: "Crispy fish fingers in soft tacos with sweetcorn salsa." } },
+    { day: "Wednesday", lunch: { name: "Yoghurt & strawberry pancakes", recipe: "Fluffy pancakes topped with yoghurt and strawberries." }, dinner: { name: "Loaded veggie pizza", recipe: "Pizza piled with sweetcorn and halloumi; a side of salad for the grown-ups." } },
+    { day: "Thursday", lunch: { name: "Cheesy mash cakes", recipe: "Leftover mash fried into little cakes with cheese, served with beans." }, dinner: { name: "Mild beef chilli with rice", recipe: "A gentle chilli with plenty of beans, spooned over rice." } },
+    { day: "Friday", lunch: { name: "Halloumi & sweetcorn pittas", recipe: "Grilled halloumi and sweetcorn stuffed into warm pittas." }, dinner: { name: "Sausage traybake", recipe: "Sausages roasted with vegetables and potatoes in one tray." } },
+    { day: "Saturday", lunch: { name: "Fish-finger butty & peas", recipe: "The Saturday classic: fish fingers in bread with buttery peas." }, dinner: { name: "Roast chicken dinner", recipe: "Roast chicken with all the trimmings, mango chutney on the side." } },
+    { day: "Sunday", lunch: { name: "Pancake & fruit platter", recipe: "Pancakes with strawberries, mango and a pot of yoghurt to share." }, dinner: { name: "Veggie & bean stir fry", recipe: "Stir-fried veg and beans with rice and a mild sauce." } },
+  ],
+];
+
 export function getDemoMeals() {
   return {
     ideas: [
@@ -224,6 +247,7 @@ export function getDemoMeals() {
       { id: "bo", name: "Bo", colour: GREEN, foods: KIDS.bo.foods },
     ],
     weekLabel: "This week",
+    samples: DEMO_MEAL_WEEKS,
   };
 }
 
