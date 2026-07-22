@@ -23,6 +23,7 @@ export interface Household {
   name: string;
   load_state: LoadState;
   base_pocket_money_pence: number;
+  meal_ideas: string[];
   created_at: string;
 }
 
@@ -39,6 +40,7 @@ export interface Member {
   pin_type: PinType;
   weekly_cap_pence: number | null;
   per_visit_cap_pence: number | null;
+  fave_foods: string[];
   active: boolean;
   created_at: string;
 }

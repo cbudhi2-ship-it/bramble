@@ -5,11 +5,12 @@
  */
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getDemoKid, getDemoParent, getDemoJobs, getDemoInsights, DEMO_PEOPLE } from "@/lib/demo-data";
+import { getDemoKid, getDemoParent, getDemoJobs, getDemoInsights, getDemoMeals, DEMO_PEOPLE } from "@/lib/demo-data";
 import KidHome from "@/app/kid/home/KidHome";
 import ParentToday from "@/app/parent/ParentToday";
 import ParentJobs from "@/app/parent/jobs/ParentJobs";
 import ParentInsights from "@/app/parent/insights/ParentInsights";
+import MealsManager from "@/app/parent/meals/MealsManager";
 
 export function generateStaticParams() {
   return DEMO_PEOPLE.map((p) => ({ who: p.slug }));
@@ -26,6 +27,9 @@ export default async function DemoScreen({ params }: { params: Promise<{ who: st
     screen = <ParentJobs initialJobs={getDemoJobs()} demo />;
   } else if (who === "insights") {
     screen = <ParentInsights {...getDemoInsights()} demo />;
+  } else if (who === "meals") {
+    const m = getDemoMeals();
+    screen = <MealsManager ideas={m.ideas} children={m.children} plan={null} weekLabel={m.weekLabel} demo />;
   } else {
     const kid = getDemoKid(who);
     if (!kid) notFound();

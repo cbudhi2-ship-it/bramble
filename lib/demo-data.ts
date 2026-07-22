@@ -31,6 +31,7 @@ export const DEMO_PEOPLE: DemoPerson[] = [
   { slug: "parent", name: "Parent · Today", colour: BERRY, tag: "The grown-ups", kind: "parent" },
   { slug: "jobs", name: "Parent · Jobs", colour: BERRY, tag: "Add a job", kind: "parent" },
   { slug: "insights", name: "Parent · Insights", colour: BERRY, tag: "Over time", kind: "parent" },
+  { slug: "meals", name: "Parent · Meals", colour: BERRY, tag: "Week's food plan", kind: "parent" },
 ];
 
 /** Sample job library for the /demo jobs screen. */
@@ -76,6 +77,7 @@ export interface DemoKidHome {
   mode: "low_demand" | "standard" | "young_visual";
   balancePence: number;
   goal: { title: string; target_pence: number } | null;
+  foods: string[];
   dealt: KidJob[];
   board: KidJob[];
 }
@@ -87,6 +89,7 @@ const KIDS: Record<string, DemoKidHome> = {
     mode: "low_demand",
     balancePence: 1600,
     goal: { title: "Sylvanian caravan", target_pence: 2500 },
+    foods: ["Pasta pesto", "Halloumi", "Pancakes"],
     dealt: [
       job({ id: "m1", title: "Empty the dishwasher", icon: "🍽️", kind: "house_critical", framing_ambient: "The dishwasher is full" }),
       job({ id: "m2", title: "Feed the cat", icon: "🐈", kind: "house_critical", framing_ambient: "Nutmeg's bowl is empty" }),
@@ -102,6 +105,7 @@ const KIDS: Record<string, DemoKidHome> = {
     mode: "young_visual",
     balancePence: 140,
     goal: null,
+    foods: ["Fish fingers", "Peas", "Yoghurt"],
     dealt: [
       job({ id: "r1", title: "Feed Nutmeg", icon: "🐈", kind: "house_critical" }),
       job({ id: "r2", title: "Shoes away", icon: "👟", kind: "house_critical" }),
@@ -114,6 +118,7 @@ const KIDS: Record<string, DemoKidHome> = {
     mode: "standard",
     balancePence: 1640,
     goal: { title: "Roller skates", target_pence: 4000 },
+    foods: ["Chicken curry", "Rice", "Mango"],
     dealt: [job({ id: "n1", title: "Bins out", icon: "🗑️", kind: "house_critical" })],
     board: [
       job({ id: "n2", title: "Dishwasher", icon: "⚡", price_pence: 100, is_bonus: true, award_pence: 100 }),
@@ -126,6 +131,7 @@ const KIDS: Record<string, DemoKidHome> = {
     mode: "standard",
     balancePence: 1330,
     goal: { title: "Squishmallow", target_pence: 1700 },
+    foods: ["Pizza", "Sweetcorn", "Strawberries"],
     dealt: [job({ id: "p1", title: "Washing in", icon: "🧺", kind: "house_critical" })],
     board: [
       job({ id: "p2", title: "Sweep the patio", icon: "🍂", price_pence: 150 }),
@@ -138,6 +144,7 @@ const KIDS: Record<string, DemoKidHome> = {
     mode: "young_visual",
     balancePence: 80,
     goal: null,
+    foods: ["Sausages", "Mash", "Beans"],
     dealt: [
       job({ id: "b1", title: "Toys in the box", icon: "🧸", kind: "house_critical" }),
       job({ id: "b2", title: "Spoons away", icon: "🥄", kind: "house_critical" }),
@@ -195,6 +202,28 @@ export function getDemoParent() {
       { id: "t1", title: "Book the dentist", done: false },
       { id: "t2", title: "Order Nell's birthday present", done: false },
     ],
+  };
+}
+
+/** Sample data for the /demo meals screen (grown-up ideas + children's foods). */
+export function getDemoMeals() {
+  return {
+    ideas: [
+      "Spaghetti bolognese",
+      "Roast chicken",
+      "Veggie stir fry",
+      "Chilli con carne",
+      "Fish pie",
+      "Fajitas",
+    ],
+    children: [
+      { id: "mabel", name: "Mabel", colour: PURPLE, foods: KIDS.mabel.foods },
+      { id: "rowan", name: "Rowan", colour: ORANGE, foods: KIDS.rowan.foods },
+      { id: "nell", name: "Nell", colour: TEAL, foods: KIDS.nell.foods },
+      { id: "posy", name: "Posy", colour: PINK, foods: KIDS.posy.foods },
+      { id: "bo", name: "Bo", colour: GREEN, foods: KIDS.bo.foods },
+    ],
+    weekLabel: "This week",
   };
 }
 

@@ -26,6 +26,7 @@ export default async function KidHomePage() {
       mode={session.mode}
       balancePence={home.balancePence}
       goal={home.goal}
+      foods={home.member?.fave_foods ?? []}
       dealt={home.dealt.map(serialiseJob)}
       board={home.board.map(serialiseJob)}
     />

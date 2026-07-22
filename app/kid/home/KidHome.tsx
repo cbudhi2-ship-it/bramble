@@ -28,6 +28,7 @@ interface Props {
   mode: "low_demand" | "standard" | "young_visual";
   balancePence: number;
   goal: Goal | null;
+  foods?: string[];
   dealt: Job[];
   board: Job[];
   demo?: boolean;
@@ -47,7 +48,7 @@ function priceLabel(j: Job): string {
   return p > 0 ? formatPence(p) : "";
 }
 
-export default function KidHome({ name, colour, mode, balancePence, goal, dealt, board, demo = false }: Props) {
+export default function KidHome({ name, colour, mode, balancePence, goal, foods = [], dealt, board, demo = false }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [showBalance, setShowBalance] = useState(mode !== "low_demand");
@@ -57,7 +58,27 @@ export default function KidHome({ name, colour, mode, balancePence, goal, dealt,
   const [editGoal, setEditGoal] = useState(false);
   const [gTitle, setGTitle] = useState(goal?.title ?? "");
   const [gTarget, setGTarget] = useState(goal ? (goal.target_pence / 100).toFixed(2) : "");
+  const [curFoods, setCurFoods] = useState<string[]>(foods.filter((f) => f && f.trim()));
+  const [editFoods, setEditFoods] = useState(false);
+  const [fEdit, setFEdit] = useState<string[]>([foods[0] ?? "", foods[1] ?? "", foods[2] ?? ""]);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  async function saveFoods() {
+    const list = fEdit.map((f) => f.trim()).filter(Boolean).slice(0, 3);
+    setEditFoods(false);
+    setCurFoods(list);
+    if (demo) {
+      setDemoTip(true);
+      setTimeout(() => setDemoTip(false), 1800);
+      return;
+    }
+    await fetch("/api/kid/foods", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ foods: list }),
+    });
+    router.refresh();
+  }
 
   async function saveGoal() {
     const title = gTitle.trim();
@@ -316,6 +337,61 @@ export default function KidHome({ name, colour, mode, balancePence, goal, dealt,
                     Change what I&apos;m saving for
                   </button>
                 </>
+              )}
+            </div>
+
+            {/* my favourite foods — feeds the family's weekly meal planner */}
+            <div style={{ background: "var(--paper)", borderRadius: 14, padding: "12px 14px", marginTop: 12 }}>
+              <div className="grouphead" style={{ margin: "0 0 8px" }}>
+                {isYoung ? "🍎 Foods I love" : "🍎 My 3 favourite foods"}
+              </div>
+              {editFoods ? (
+                <div style={{ display: "grid", gap: 7 }}>
+                  {[0, 1, 2].map((i) => (
+                    <input
+                      key={i}
+                      value={fEdit[i]}
+                      onChange={(e) => setFEdit((l) => l.map((x, j) => (j === i ? e.target.value : x)))}
+                      placeholder={`Favourite ${i + 1}`}
+                      style={{ width: "100%", font: "inherit", fontSize: 15, padding: "9px 11px", borderRadius: 9, border: "1px solid var(--paper-2)", background: "#fff", color: "var(--ink)" }}
+                    />
+                  ))}
+                  <button
+                    onClick={saveFoods}
+                    style={{ marginTop: 2, background: colour, color: "#fff", border: 0, borderRadius: 99, padding: "9px 16px", fontWeight: 700, fontSize: 13.5, cursor: "pointer", fontFamily: "inherit" }}
+                  >
+                    Save
+                  </button>
+                </div>
+              ) : curFoods.length === 0 ? (
+                <button
+                  onClick={() => {
+                    setFEdit([curFoods[0] ?? "", curFoods[1] ?? "", curFoods[2] ?? ""]);
+                    setEditFoods(true);
+                  }}
+                  style={{ background: "var(--paper-2)", color: "var(--ink-2)", border: 0, borderRadius: 10, padding: "10px 12px", fontSize: 13, cursor: "pointer", width: "100%", fontFamily: "inherit", textAlign: "left" }}
+                >
+                  Add your favourite foods →
+                </button>
+              ) : (
+                <div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {curFoods.map((f, i) => (
+                      <span key={i} style={{ fontSize: 13, background: `${colour}22`, color: "var(--ink)", padding: "5px 12px", borderRadius: 99, fontWeight: 600 }}>
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setFEdit([curFoods[0] ?? "", curFoods[1] ?? "", curFoods[2] ?? ""]);
+                      setEditFoods(true);
+                    }}
+                    style={{ background: "none", border: 0, color: "var(--ink-3)", fontSize: 11.5, cursor: "pointer", marginTop: 8, padding: 0, textDecoration: "underline", fontFamily: "inherit" }}
+                  >
+                    Change my foods
+                  </button>
+                </div>
               )}
             </div>
 

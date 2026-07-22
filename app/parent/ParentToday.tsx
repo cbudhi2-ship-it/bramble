@@ -327,6 +327,9 @@ export default function ParentToday({
               <a href={demo ? "/demo/insights" : "/parent/insights"} className="pill" style={{ background: "var(--paper-2)", color: "var(--ink-2)", textDecoration: "none", flex: "none" }}>
                 Insights
               </a>
+              <a href={demo ? "/demo/meals" : "/parent/meals"} className="pill" style={{ background: "var(--paper-2)", color: "var(--ink-2)", textDecoration: "none", flex: "none" }}>
+                Meals
+              </a>
             </div>
 
             {/* the dial */}
