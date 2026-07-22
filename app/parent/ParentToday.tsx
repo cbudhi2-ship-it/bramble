@@ -66,6 +66,7 @@ export default function ParentToday({
   const [tasks, setTasks] = useState<ParentTask[]>(parentTasks);
   const [newTask, setNewTask] = useState("");
   const [logging, setLogging] = useState<string | null>(null); // jobId whose "who did it?" is open
+  const [giving, setGiving] = useState<string | null>(null); // jobId whose "give it to…" is open
   const [confirmReshuffle, setConfirmReshuffle] = useState(false);
 
   async function markDone(jobInstanceId: string, memberId: string | null) {
@@ -80,6 +81,41 @@ export default function ParentToday({
     setBusy(false);
     router.refresh();
   }
+
+  async function assign(jobInstanceId: string, memberId: string) {
+    setGiving(null);
+    if (demo) return tip();
+    setBusy(true);
+    await fetch("/api/parent/assign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobInstanceId, memberId }),
+    });
+    setBusy(false);
+    router.refresh();
+  }
+
+  const giveChooser = (jobId: string) => (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", margin: "-2px 0 10px", padding: "0 2px" }}>
+      <span style={{ fontSize: 11.5, color: "var(--ink-3)", width: "100%", marginBottom: 2 }}>Give it to…</span>
+      {members.map((m) => (
+        <button
+          key={m.id}
+          onClick={() => assign(jobId, m.id)}
+          className="pill"
+          style={{ background: m.colour, color: "#fff", border: 0, cursor: "pointer", padding: "6px 12px" }}
+        >
+          {m.name}
+        </button>
+      ))}
+      <button
+        onClick={() => setGiving(null)}
+        style={{ background: "none", border: 0, color: "var(--ink-3)", fontSize: 12, cursor: "pointer" }}
+      >
+        cancel
+      </button>
+    </div>
+  );
 
   const whoChooser = (jobId: string) => (
     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", margin: "-2px 0 10px", padding: "0 2px" }}>
@@ -485,13 +521,28 @@ export default function ParentToday({
                       </div>
                       <button
                         className="go"
+                        style={{ background: "var(--paper-2)", color: "var(--ink-2)" }}
+                        onClick={() => {
+                          setLogging(null);
+                          setGiving(giving === j.id ? null : j.id);
+                        }}
+                        disabled={busy}
+                      >
+                        Give to…
+                      </button>
+                      <button
+                        className="go"
                         style={{ background: "var(--leaf)", color: "#fff" }}
-                        onClick={() => setLogging(logging === j.id ? null : j.id)}
+                        onClick={() => {
+                          setGiving(null);
+                          setLogging(logging === j.id ? null : j.id);
+                        }}
                         disabled={busy}
                       >
                         Done
                       </button>
                     </div>
+                    {giving === j.id && giveChooser(j.id)}
                     {logging === j.id && whoChooser(j.id)}
                   </div>
                 ))}
