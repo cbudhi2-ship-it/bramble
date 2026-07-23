@@ -297,6 +297,16 @@ export default function ParentToday({
   const noChildren = !demo && members.length === 0;
   const nothingDealt = !demo && members.length > 0 && jobs.length === 0;
 
+  // top-of-dashboard menu
+  const navItems: { label: string; icon: string; href?: string; onClick?: () => void; primary?: boolean }[] = [
+    ...(!demo ? [{ label: "Family", icon: "👪", href: "/parent/family" }] : []),
+    ...(!demo ? [{ label: "Who's here", icon: "🗓️", href: "/parent/presence" }] : []),
+    { label: "Jobs", icon: "➕", href: demo ? "/demo/jobs" : "/parent/jobs", primary: true },
+    { label: "Insights", icon: "📊", href: demo ? "/demo/insights" : "/parent/insights" },
+    { label: "Meals", icon: "🍽️", href: demo ? "/demo/meals" : "/parent/meals" },
+    ...(!demo ? [{ label: "Sign out", icon: "🚪", onClick: signOut }] : []),
+  ];
+
   return (
     <div className={`appshell${demo ? "" : " app-fullwidth"}`}>
       <div className="phone" style={{ height: 720 }}>
@@ -335,41 +345,45 @@ export default function ParentToday({
                 <button
                   onClick={handOver}
                   className="pill"
-                  style={{ background: "var(--paper-2)", color: "var(--ink-2)", border: 0, cursor: "pointer", fontFamily: "inherit" }}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "var(--paper-2)", color: "var(--ink-2)", border: 0, cursor: "pointer", fontFamily: "inherit" }}
                 >
-                  Hand over
+                  <span aria-hidden>📲</span> Hand over
                 </button>
               )}
             </div>
-            <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 12 }}>
-              {!demo && (
-                <a href="/parent/family" className="pill" style={{ background: "var(--paper-2)", color: "var(--ink-2)", textDecoration: "none", flex: "none" }}>
-                  Family
-                </a>
-              )}
-              {!demo && (
-                <a href="/parent/presence" className="pill" style={{ background: "var(--paper-2)", color: "var(--ink-2)", textDecoration: "none", flex: "none" }}>
-                  Who&apos;s here
-                </a>
-              )}
-              <a href={demo ? "/demo/jobs" : "/parent/jobs"} className="pill" style={{ background: "var(--berry)", color: "#fff", textDecoration: "none", flex: "none" }}>
-                + Jobs
-              </a>
-              <a href={demo ? "/demo/insights" : "/parent/insights"} className="pill" style={{ background: "var(--paper-2)", color: "var(--ink-2)", textDecoration: "none", flex: "none" }}>
-                Insights
-              </a>
-              <a href={demo ? "/demo/meals" : "/parent/meals"} className="pill" style={{ background: "var(--paper-2)", color: "var(--ink-2)", textDecoration: "none", flex: "none" }}>
-                Meals
-              </a>
-              {!demo && (
-                <button
-                  onClick={signOut}
-                  className="pill"
-                  style={{ background: "var(--paper-2)", color: "var(--ink-2)", border: 0, cursor: "pointer", fontFamily: "inherit", flex: "none" }}
-                >
-                  Sign out
-                </button>
-              )}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", paddingBottom: 14 }}>
+              {navItems.map((it) => {
+                const style = {
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  textDecoration: "none",
+                  border: 0,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  fontWeight: 600 as const,
+                  padding: "9px 14px",
+                  background: it.primary ? "var(--berry)" : "var(--paper-2)",
+                  color: it.primary ? "#fff" : "var(--ink-2)",
+                };
+                const inner = (
+                  <>
+                    <span style={{ fontSize: 15, lineHeight: 1 }} aria-hidden>
+                      {it.icon}
+                    </span>
+                    {it.label}
+                  </>
+                );
+                return it.href ? (
+                  <a key={it.label} href={it.href} className="pill" style={style}>
+                    {inner}
+                  </a>
+                ) : (
+                  <button key={it.label} onClick={it.onClick} className="pill" style={style}>
+                    {inner}
+                  </button>
+                );
+              })}
             </div>
 
             {/* front seat of the car — settles the daily argument */}
