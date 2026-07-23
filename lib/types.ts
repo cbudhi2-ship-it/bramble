@@ -25,6 +25,7 @@ export interface Household {
   base_pocket_money_pence: number;
   meal_ideas: string[];
   front_seats: number;
+  paid: boolean;
   created_at: string;
 }
 

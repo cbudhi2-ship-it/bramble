@@ -33,6 +33,11 @@ export default async function ParentPage() {
   const parent = result.parent;
 
   const data = await getParentToday(parent.householdId);
+  // one-off unlock gate: a household that hasn't paid sees the unlock screen.
+  // (Existing households were grandfathered to paid=true in migration 0008, so
+  // no current family is ever locked out.) To loosen this to "set up free, then
+  // unlock", remove this redirect and surface the unlock link elsewhere instead.
+  if (data.household && !data.household.paid) redirect("/parent/unlock");
   const memberName: Record<string, { name: string; colour: string }> = {};
   for (const m of data.members) memberName[m.id] = { name: m.display_name, colour: m.colour_hex };
 
