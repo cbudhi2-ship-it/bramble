@@ -108,17 +108,15 @@ export async function getParentToday(householdId: string) {
   );
   const weekendCrew = present.some((m) => m.presence === "eow_and_holidays");
 
-  // who rides up front today — a stable, fair daily pick from whoever's here.
-  // Seeded by household + date so it holds all day and changes tomorrow.
+  // who rides up front today — a stable, fair daily order of whoever's here,
+  // seeded by household + date so it holds all day and changes tomorrow. The
+  // client slices this to the chosen number of seats, so toggling is instant.
   const seats = Math.min(2, Math.max(1, household?.front_seats ?? 1));
-  const frontIds = seededShuffle(
-    present.map((m) => m.id),
-    `${householdId}:${date}:front`
-  ).slice(0, seats);
-  const frontPicks = frontIds.map((id) => {
-    const m = present.find((p) => p.id === id)!;
-    return { id: m.id, name: m.display_name, colour: m.colour_hex };
-  });
+  const frontOrder = seededShuffle(present, `${householdId}:${date}:front`).map((m) => ({
+    id: m.id,
+    name: m.display_name,
+    colour: m.colour_hex,
+  }));
   const hasInstance = new Set(all.map((j) => j.job_def_id));
 
   // essential jobs that should happen today but nobody was dealt them
@@ -143,7 +141,7 @@ export async function getParentToday(householdId: string) {
     jobs: all,
     undistributed,
     parentTasks: (tasks ?? []) as { id: string; title: string; done: boolean }[],
-    frontSeat: { seats, picks: frontPicks },
+    frontSeat: { seats, order: frontOrder },
   };
 }
 

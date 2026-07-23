@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatPence } from "@/lib/money";
-import { seededShuffle } from "@/lib/rota";
 
 interface Member {
   id: string;
@@ -41,7 +40,7 @@ interface FrontPick {
 }
 interface FrontSeat {
   seats: number;
-  picks: FrontPick[];
+  order: FrontPick[];
 }
 interface Props {
   loadState: "normal" | "stretched" | "survival";
@@ -65,7 +64,7 @@ export default function ParentToday({
   jobs,
   undistributed = [],
   parentTasks = [],
-  frontSeat = { seats: 1, picks: [] },
+  frontSeat = { seats: 1, order: [] },
   demo = false,
 }: Props) {
   const router = useRouter();
@@ -81,24 +80,17 @@ export default function ParentToday({
   const [giving, setGiving] = useState<string | null>(null); // jobId whose "give it to…" is open
   const [confirmReshuffle, setConfirmReshuffle] = useState(false);
   const [frontSeats, setFrontSeats] = useState(frontSeat.seats);
-  const [frontPicks, setFrontPicks] = useState<FrontPick[]>(frontSeat.picks);
+  const frontPicks = frontSeat.order.slice(0, frontSeats); // instant, no refetch
 
-  async function chooseSeats(n: number) {
-    setFrontSeats(n);
-    if (demo) {
-      // demo has no server — pick locally from the family, stably
-      const order = seededShuffle(members, "demo:front");
-      setFrontPicks(order.slice(0, n));
-      return;
-    }
-    setBusy(true);
-    await fetch("/api/parent/front-seats", {
+  function chooseSeats(n: number) {
+    setFrontSeats(n); // update the display immediately
+    if (demo) return;
+    // persist the preference in the background; the display is already right
+    fetch("/api/parent/front-seats", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ seats: n }),
-    });
-    setBusy(false);
-    router.refresh();
+    }).catch(() => {});
   }
 
   async function markDone(jobInstanceId: string, memberId: string | null) {
