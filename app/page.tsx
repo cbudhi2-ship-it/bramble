@@ -58,6 +58,14 @@ export default function Landing() {
   const [run, setRun] = useState(false);
   const [clock, setClock] = useState("06:00");
   const [dial, setDial] = useState(0);
+  const [price, setPrice] = useState<{ label: string; ready: boolean } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/price")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setPrice(d))
+      .catch(() => {});
+  }, []);
 
   function runDeal() {
     setRun(false);
@@ -327,25 +335,27 @@ export default function Landing() {
       <div className="sec price">
         <p className="eyebrow">Price</p>
         <h2 className="h2" style={{ margin: "0 auto" }}>
-          One house. Everyone in it.
+          Pay once. Keep it for good.
         </h2>
         <div className="pricecard">
           <div className="pricebig">
-            £3.99<small> / month</small>
+            {price?.ready ? price.label : "One payment"}
+            <small> · one-off</small>
           </div>
           <ul className="plist">
+            <li>One payment for the whole household — never a subscription</li>
             <li>Unlimited children, two grown-ups</li>
             <li>Low-demand mode for as many as need it</li>
-            <li>Two-home schedules and holiday planning</li>
+            <li>Two-home schedules, holiday planning, the weekly meal planner</li>
             <li>The six o&apos;clock deal, the fallback board, the dial</li>
             <li>No child ever needs a device or an account</li>
           </ul>
-          <a className="btn btn-1" href="/log-in" style={{ width: "100%", textAlign: "center" }}>
-            Start a free month
+          <a className="btn btn-1" href="/sign-up" style={{ width: "100%", textAlign: "center" }}>
+            Get Bramble for the family
           </a>
           <p className="micro">
-            Cancel any time. Your family&apos;s data is never sold, and there&apos;s nothing in here
-            to advertise to.
+            One-off payment, no recurring charge. Your family&apos;s data is never sold, and
+            there&apos;s nothing in here to advertise to.
           </p>
         </div>
       </div>
