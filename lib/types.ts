@@ -24,6 +24,7 @@ export interface Household {
   load_state: LoadState;
   base_pocket_money_pence: number;
   meal_ideas: string[];
+  front_seats: number;
   created_at: string;
 }
 

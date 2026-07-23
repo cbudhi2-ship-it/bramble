@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatPence } from "@/lib/money";
+import { seededShuffle } from "@/lib/rota";
 
 interface Member {
   id: string;
@@ -33,12 +34,22 @@ interface ParentTask {
   title: string;
   done: boolean;
 }
+interface FrontPick {
+  id: string;
+  name: string;
+  colour: string;
+}
+interface FrontSeat {
+  seats: number;
+  picks: FrontPick[];
+}
 interface Props {
   loadState: "normal" | "stretched" | "survival";
   members: Member[];
   jobs: Job[];
   undistributed?: Undistributed[];
   parentTasks?: ParentTask[];
+  frontSeat?: FrontSeat;
   demo?: boolean;
 }
 
@@ -54,6 +65,7 @@ export default function ParentToday({
   jobs,
   undistributed = [],
   parentTasks = [],
+  frontSeat = { seats: 1, picks: [] },
   demo = false,
 }: Props) {
   const router = useRouter();
@@ -68,6 +80,26 @@ export default function ParentToday({
   const [logging, setLogging] = useState<string | null>(null); // jobId whose "who did it?" is open
   const [giving, setGiving] = useState<string | null>(null); // jobId whose "give it to…" is open
   const [confirmReshuffle, setConfirmReshuffle] = useState(false);
+  const [frontSeats, setFrontSeats] = useState(frontSeat.seats);
+  const [frontPicks, setFrontPicks] = useState<FrontPick[]>(frontSeat.picks);
+
+  async function chooseSeats(n: number) {
+    setFrontSeats(n);
+    if (demo) {
+      // demo has no server — pick locally from the family, stably
+      const order = seededShuffle(members, "demo:front");
+      setFrontPicks(order.slice(0, n));
+      return;
+    }
+    setBusy(true);
+    await fetch("/api/parent/front-seats", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ seats: n }),
+    });
+    setBusy(false);
+    router.refresh();
+  }
 
   async function markDone(jobInstanceId: string, memberId: string | null) {
     setLogging(null);
@@ -330,6 +362,55 @@ export default function ParentToday({
               <a href={demo ? "/demo/meals" : "/parent/meals"} className="pill" style={{ background: "var(--paper-2)", color: "var(--ink-2)", textDecoration: "none", flex: "none" }}>
                 Meals
               </a>
+            </div>
+
+            {/* front seat of the car — settles the daily argument */}
+            <div style={{ background: "var(--sun-2)", border: "1px solid var(--sun)", borderRadius: 14, padding: "13px 15px", marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
+                <div className="grouphead" style={{ margin: 0 }}>🚗 Front seat today</div>
+                <div style={{ display: "flex", gap: 4, background: "#fff", borderRadius: 99, padding: 3 }}>
+                  {[1, 2].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => chooseSeats(n)}
+                      disabled={busy}
+                      title={n === 1 ? "One seat up front" : "Two seats up front"}
+                      style={{
+                        border: 0,
+                        cursor: "pointer",
+                        borderRadius: 99,
+                        padding: "4px 12px",
+                        fontFamily: "inherit",
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        background: frontSeats === n ? "var(--sun)" : "transparent",
+                        color: frontSeats === n ? "#fff" : "var(--ink-3)",
+                      }}
+                    >
+                      {n} seat{n > 1 ? "s" : ""}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {frontPicks.length === 0 ? (
+                <p style={{ fontSize: 12.5, color: "var(--ink-2)" }}>
+                  No one&apos;s here to ride up front today.
+                </p>
+              ) : (
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {frontPicks.map((p) => (
+                    <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, background: "#fff", borderRadius: 99, padding: "5px 12px 5px 6px" }}>
+                      <span className="ic" style={{ background: p.colour, color: "#fff", width: 30, height: 30, fontSize: 13 }}>
+                        {p.name[0]}
+                      </span>
+                      <b style={{ fontFamily: "'Bricolage Grotesque'", fontSize: 14 }}>{p.name}</b>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 9 }}>
+                Picked at random for the whole day — same all day, a fresh pick tomorrow.
+              </p>
             </div>
 
             {/* the dial */}

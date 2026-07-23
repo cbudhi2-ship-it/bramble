@@ -43,6 +43,7 @@ export default async function ParentPage() {
       jobs={data.jobs.map((j) => serialise(j, memberName))}
       undistributed={data.undistributed}
       parentTasks={data.parentTasks}
+      frontSeat={data.frontSeat}
     />
   );
 }

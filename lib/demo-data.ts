@@ -6,6 +6,7 @@
  * The shapes deliberately match the props of app/kid/home/KidHome.tsx and
  * app/parent/ParentToday.tsx so the demo reuses the actual components.
  */
+import { seededShuffle } from "@/lib/rota";
 
 const PURPLE = "#7B4FA8";
 const ORANGE = "#E07A2F";
@@ -173,15 +174,18 @@ interface ParentJob {
 }
 
 export function getDemoParent() {
+  const members = [
+    { id: "mabel", name: "Mabel", colour: PURPLE },
+    { id: "rowan", name: "Rowan", colour: ORANGE },
+    { id: "nell", name: "Nell", colour: TEAL },
+    { id: "posy", name: "Posy", colour: PINK },
+    { id: "bo", name: "Bo", colour: GREEN },
+  ];
+  const frontOrder = seededShuffle(members, "demo:front");
   return {
     loadState: "normal" as const,
-    members: [
-      { id: "mabel", name: "Mabel", colour: PURPLE },
-      { id: "rowan", name: "Rowan", colour: ORANGE },
-      { id: "nell", name: "Nell", colour: TEAL },
-      { id: "posy", name: "Posy", colour: PINK },
-      { id: "bo", name: "Bo", colour: GREEN },
-    ],
+    members,
+    frontSeat: { seats: 1, picks: frontOrder.slice(0, 1) },
     jobs: [
       // waiting for review
       { id: "v1", status: "submitted", title: "Washing in", icon: "🧺", kind: "house_critical", price_pence: 100, fallback_pence: 75, is_bonus: false, parent_note: null, whoName: "Posy", whoColour: PINK },

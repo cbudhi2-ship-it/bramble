@@ -6,7 +6,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { balancePence } from "@/lib/money";
 import { resolvePresentMembers } from "@/lib/presence";
-import { recurrenceFires } from "@/lib/rota";
+import { recurrenceFires, seededShuffle } from "@/lib/rota";
 import type { JobDef, JobInstance, Member, PresenceOverride } from "@/lib/types";
 
 export interface HydratedJob extends JobInstance {
@@ -107,6 +107,18 @@ export async function getParentToday(householdId: string) {
     (overrides ?? []) as PresenceOverride[]
   );
   const weekendCrew = present.some((m) => m.presence === "eow_and_holidays");
+
+  // who rides up front today — a stable, fair daily pick from whoever's here.
+  // Seeded by household + date so it holds all day and changes tomorrow.
+  const seats = Math.min(2, Math.max(1, household?.front_seats ?? 1));
+  const frontIds = seededShuffle(
+    present.map((m) => m.id),
+    `${householdId}:${date}:front`
+  ).slice(0, seats);
+  const frontPicks = frontIds.map((id) => {
+    const m = present.find((p) => p.id === id)!;
+    return { id: m.id, name: m.display_name, colour: m.colour_hex };
+  });
   const hasInstance = new Set(all.map((j) => j.job_def_id));
 
   // essential jobs that should happen today but nobody was dealt them
@@ -131,6 +143,7 @@ export async function getParentToday(householdId: string) {
     jobs: all,
     undistributed,
     parentTasks: (tasks ?? []) as { id: string; title: string; done: boolean }[],
+    frontSeat: { seats, picks: frontPicks },
   };
 }
 
