@@ -1,10 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Unlock({ priceLabel, ready }: { priceLabel: string; ready: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function signOut() {
+    await createClient().auth.signOut();
+    window.location.href = "/log-in";
+  }
 
   async function buy() {
     setBusy(true);
@@ -53,6 +59,13 @@ export default function Unlock({ priceLabel, ready }: { priceLabel: string; read
             )}
 
             {error && <p style={{ fontSize: 12.5, color: "var(--berry)" }}>{error}</p>}
+
+            <button
+              onClick={signOut}
+              style={{ background: "none", border: 0, color: "var(--ink-3)", fontSize: 12, cursor: "pointer", marginTop: 6, textDecoration: "underline" }}
+            >
+              Not you? Sign out
+            </button>
           </div>
         </div>
       </div>

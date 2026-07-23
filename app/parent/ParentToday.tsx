@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatPence } from "@/lib/money";
+import { createClient } from "@/lib/supabase/client";
 
 interface Member {
   id: string;
@@ -213,6 +214,12 @@ export default function ParentToday({
     else tip();
   }
 
+  async function signOut() {
+    if (demo) return tip();
+    await createClient().auth.signOut();
+    router.push("/log-in");
+  }
+
   async function review1(jobInstanceId: string, action: string, percent?: number) {
     if (demo) return tip();
     setBusy(true);
@@ -354,6 +361,15 @@ export default function ParentToday({
               <a href={demo ? "/demo/meals" : "/parent/meals"} className="pill" style={{ background: "var(--paper-2)", color: "var(--ink-2)", textDecoration: "none", flex: "none" }}>
                 Meals
               </a>
+              {!demo && (
+                <button
+                  onClick={signOut}
+                  className="pill"
+                  style={{ background: "var(--paper-2)", color: "var(--ink-2)", border: 0, cursor: "pointer", fontFamily: "inherit", flex: "none" }}
+                >
+                  Sign out
+                </button>
+              )}
             </div>
 
             {/* front seat of the car — settles the daily argument */}
