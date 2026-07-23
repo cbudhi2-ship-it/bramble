@@ -308,6 +308,37 @@ export default function Landing() {
         </div>
       </div>
 
+      {/* LITTLE STANDOFFS */}
+      <div className="sec">
+        <p className="eyebrow">The little standoffs</p>
+        <h2 className="h2">The rows that were never really about chores.</h2>
+        <p className="sub">
+          A lot of the daily friction in a busy house has nothing to do with jobs at all. Bramble
+          quietly settles a couple of the big ones before they even start.
+        </p>
+        <div className="split" style={{ alignItems: "stretch", gap: 20, marginTop: 44 }}>
+          <div className="tile">
+            <h3>🚗 Who sits in the front</h3>
+            <p>
+              Every trip used to open with the same argument. Now Bramble just decides — one child,
+              or two if your car has room — picked at random each morning and settled for the whole
+              day. It&apos;s the same rule for everyone, there&apos;s nothing to barter over, and
+              it&apos;s sorted before anyone&apos;s even found their shoes.
+            </p>
+          </div>
+          <div className="tile">
+            <h3>🍽️ What&apos;s for tea</h3>
+            <p>
+              Everyone likes something different and someone always ends up disappointed. Each child
+              adds three favourite foods, you add a few ideas, and Bramble dreams up a whole week of
+              brand-new recipes that weave everyone&apos;s favourites together — so no single dish
+              &quot;wins,&quot; nobody waits their turn, and you stop having to think of something
+              that&apos;ll please the whole table.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* NEVER */}
       <div className="sec">
         <p className="eyebrow">On principle</p>
