@@ -362,7 +362,13 @@ export default function Landing() {
 
       <div className="foot">
         <span>Bramble · made in Cambridgeshire</span>
-        <span>Privacy · Terms · Contact</span>
+        <span>
+          <a href="/privacy" style={{ color: "inherit" }}>Privacy</a>
+          {" · "}
+          <a href="/terms" style={{ color: "inherit" }}>Terms</a>
+          {" · "}
+          <a href="mailto:hello@familybramble.online" style={{ color: "inherit" }}>Contact</a>
+        </span>
       </div>
     </div>
   );
