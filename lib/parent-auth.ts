@@ -91,28 +91,18 @@ export async function getParentOrBootstrap(): Promise<BootstrapResult> {
 
   const admin = createServiceClient();
 
-  // Single-family instance: join the existing household if there is one,
-  // otherwise create it (and seed the starter jobs).
-  const { data: existing } = await admin
+  // Every new account is its own family: create a FRESH household and seed the
+  // starter jobs. Never join an existing household — that would drop a new
+  // customer into another family's data (and skip their paywall). A second
+  // grown-up joining an existing family needs a deliberate invite flow, not
+  // this auto-bootstrap.
+  const { data: hh } = await admin
     .from("household")
+    .insert({ name: "Our house", base_pocket_money_pence: 0, load_state: "normal" })
     .select("id")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  let householdId: string;
-  if (existing?.id) {
-    householdId = existing.id as string;
-  } else {
-    const { data: hh } = await admin
-      .from("household")
-      .insert({ name: "Our house", base_pocket_money_pence: 0, load_state: "normal" })
-      .select("id")
-      .single();
-    householdId = hh!.id as string;
-    const hid = householdId; // const for the closure below
-    await admin.from("job_def").insert(DEFAULT_JOBS.map((j) => ({ household_id: hid, ...j })));
-  }
+    .single();
+  const householdId = hh!.id as string;
+  await admin.from("job_def").insert(DEFAULT_JOBS.map((j) => ({ household_id: householdId, ...j })));
 
   const displayName = (user.email ?? "Parent").split("@")[0];
   await admin
