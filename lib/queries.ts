@@ -145,6 +145,12 @@ export async function getParentToday(householdId: string) {
   };
 }
 
+export interface TodayItem {
+  title: string;
+  icon: string;
+  pence: number; // what they earned for it (0 = done, no money)
+}
+
 export interface MemberInsight {
   id: string;
   name: string;
@@ -154,6 +160,8 @@ export interface MemberInsight {
   lapsed: number; // …that they left to become a paid bonus
   grabbed: number; // paid/bonus jobs they picked up that weren't theirs
   consistencyPct: number | null; // didOnTime / dealt
+  today: TodayItem[]; // what they did / were paid for today
+  todayPence: number; // total earned today
 }
 
 /**
@@ -164,17 +172,63 @@ export interface MemberInsight {
 export async function getInsights(householdId: string, days = 7) {
   const supabase = createServiceClient();
   const start = daysAgo(days - 1);
+  const todayStr = today();
 
-  const [{ data: members }, { data: rows }] = await Promise.all([
-    supabase.from("member").select("*").eq("household_id", householdId).eq("active", true),
-    supabase
-      .from("job_instance")
-      .select("dealt_to, claimed_by, is_bonus, status")
-      .eq("household_id", householdId)
-      .gte("date", start),
-  ]);
+  const [{ data: members }, { data: rows }, { data: doneToday }, { data: paysToday }] =
+    await Promise.all([
+      supabase.from("member").select("*").eq("household_id", householdId).eq("active", true),
+      supabase
+        .from("job_instance")
+        .select("dealt_to, claimed_by, is_bonus, status")
+        .eq("household_id", householdId)
+        .gte("date", start),
+      // today's completed jobs, with who did them and what they earned
+      supabase
+        .from("job_instance")
+        .select("assigned_to, claimed_by, award_pence, is_bonus, status, job_def:job_def_id(title, icon_key, price_pence)")
+        .eq("household_id", householdId)
+        .eq("date", todayStr)
+        .in("status", ["approved", "part_done"]),
+      // today's non-job credits (thank-yous, pocket money) not tied to a job
+      supabase
+        .from("ledger")
+        .select("member_id, delta_pence, reason")
+        .eq("household_id", householdId)
+        .gte("created_at", `${todayStr}T00:00:00.000Z`)
+        .in("reason", ["spontaneous", "base", "adjustment"]),
+    ]);
 
   const done = (s: string) => s === "approved" || s === "part_done";
+
+  // per-member "what they did today" list
+  const todayByMember: Record<string, TodayItem[]> = {};
+  const push = (id: string | null, item: TodayItem) => {
+    if (!id) return;
+    (todayByMember[id] ??= []).push(item);
+  };
+  type DoneRow = {
+    assigned_to: string | null;
+    claimed_by: string | null;
+    award_pence: number | null;
+    job_def: { title?: string; icon_key?: string; price_pence?: number } | null;
+  };
+  for (const j of (doneToday ?? []) as unknown as DoneRow[]) {
+    const doer = j.claimed_by ?? j.assigned_to;
+    const def = j.job_def;
+    push(doer, {
+      title: def?.title ?? "Job",
+      icon: def?.icon_key ?? "•",
+      pence: j.award_pence ?? def?.price_pence ?? 0,
+    });
+  }
+  for (const p of (paysToday ?? []) as { member_id: string; delta_pence: number; reason: string }[]) {
+    if (p.delta_pence <= 0) continue;
+    push(p.member_id, {
+      title: p.reason === "spontaneous" ? "Thank-you" : p.reason === "base" ? "Pocket money" : "Adjustment",
+      icon: p.reason === "spontaneous" ? "💝" : "🪙",
+      pence: p.delta_pence,
+    });
+  }
 
   const insights: MemberInsight[] = ((members ?? []) as Member[]).map((m) => {
     let dealt = 0,
@@ -189,6 +243,7 @@ export async function getInsights(householdId: string, days = 7) {
       }
       if (r.claimed_by === m.id && r.dealt_to !== m.id && done(r.status)) grabbed++;
     }
+    const todayItems = todayByMember[m.id] ?? [];
     return {
       id: m.id,
       name: m.display_name,
@@ -198,6 +253,8 @@ export async function getInsights(householdId: string, days = 7) {
       lapsed,
       grabbed,
       consistencyPct: dealt > 0 ? Math.round((didOnTime / dealt) * 100) : null,
+      today: todayItems,
+      todayPence: todayItems.reduce((s, it) => s + it.pence, 0),
     };
   });
 

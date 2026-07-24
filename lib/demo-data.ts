@@ -260,11 +260,11 @@ export function getDemoInsights() {
   return {
     days: 7,
     insights: [
-      { id: "mabel", name: "Mabel", colour: PURPLE, dealt: 4, didOnTime: 3, lapsed: 1, grabbed: 2, consistencyPct: 75 },
-      { id: "rowan", name: "Rowan", colour: ORANGE, dealt: 6, didOnTime: 6, lapsed: 0, grabbed: 1, consistencyPct: 100 },
-      { id: "nell", name: "Nell", colour: TEAL, dealt: 5, didOnTime: 3, lapsed: 2, grabbed: 4, consistencyPct: 60 },
-      { id: "posy", name: "Posy", colour: PINK, dealt: 4, didOnTime: 4, lapsed: 0, grabbed: 1, consistencyPct: 100 },
-      { id: "bo", name: "Bo", colour: GREEN, dealt: 3, didOnTime: 1, lapsed: 2, grabbed: 0, consistencyPct: 33 },
+      { id: "mabel", name: "Mabel", colour: PURPLE, dealt: 4, didOnTime: 3, lapsed: 1, grabbed: 2, consistencyPct: 75, todayPence: 160, today: [{ title: "Empty the dishwasher", icon: "🍽️", pence: 0 }, { title: "Match the socks", icon: "🧦", pence: 60 }, { title: "Thank-you", icon: "💝", pence: 100 }] },
+      { id: "rowan", name: "Rowan", colour: ORANGE, dealt: 6, didOnTime: 6, lapsed: 0, grabbed: 1, consistencyPct: 100, todayPence: 60, today: [{ title: "Feed Nutmeg", icon: "🐈", pence: 0 }, { title: "Shoes away", icon: "👟", pence: 0 }, { title: "Socks", icon: "🧦", pence: 60 }] },
+      { id: "nell", name: "Nell", colour: TEAL, dealt: 5, didOnTime: 3, lapsed: 2, grabbed: 4, consistencyPct: 60, todayPence: 300, today: [{ title: "Bins out", icon: "🗑️", pence: 0 }, { title: "Hoover the car", icon: "🚗", pence: 200 }, { title: "Dishwasher — bonus", icon: "⚡", pence: 100 }] },
+      { id: "posy", name: "Posy", colour: PINK, dealt: 4, didOnTime: 4, lapsed: 0, grabbed: 1, consistencyPct: 100, todayPence: 100, today: [{ title: "Washing in", icon: "🧺", pence: 0 }, { title: "Sweep the patio", icon: "🍂", pence: 100 }] },
+      { id: "bo", name: "Bo", colour: GREEN, dealt: 3, didOnTime: 1, lapsed: 2, grabbed: 0, consistencyPct: 33, todayPence: 0, today: [{ title: "Toys in the box", icon: "🧸", pence: 0 }] },
     ],
   };
 }

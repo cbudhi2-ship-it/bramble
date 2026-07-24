@@ -1,3 +1,14 @@
+"use client";
+
+import { useState } from "react";
+import { formatPence } from "@/lib/money";
+
+export interface TodayItem {
+  title: string;
+  icon: string;
+  pence: number;
+}
+
 export interface Insight {
   id: string;
   name: string;
@@ -7,6 +18,8 @@ export interface Insight {
   lapsed: number;
   grabbed: number;
   consistencyPct: number | null;
+  today?: TodayItem[];
+  todayPence?: number;
 }
 
 interface Props {
@@ -17,11 +30,12 @@ interface Props {
 }
 
 /**
- * Presentational insights panel (no interactivity, so it renders on the server
- * and in the demo alike). Shows, per child, whether they clear their own dealt
- * jobs or leave them to become paid bonuses, plus opportunistic paid work.
+ * Insights panel. Shows, per child, whether they clear their own dealt jobs or
+ * leave them to become paid bonuses — and tap a child to reveal what they've
+ * actually done and been paid for today.
  */
 export default function ParentInsights({ insights, days, demo = false }: Props) {
+  const [open, setOpen] = useState<string | null>(null);
   return (
     <div className={`appshell${demo ? "" : " app-fullwidth"}`}>
       <div className="phone" style={{ height: 720 }}>
@@ -63,7 +77,10 @@ export default function ParentInsights({ insights, days, demo = false }: Props) 
                     background: "#fff",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10 }}>
+                  <button
+                    onClick={() => setOpen(open === m.id ? null : m.id)}
+                    style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10, width: "100%", background: "none", border: 0, padding: 0, cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}
+                  >
                     <span
                       style={{
                         width: 30,
@@ -85,7 +102,10 @@ export default function ParentInsights({ insights, days, demo = false }: Props) 
                     {pct !== null && (
                       <span style={{ fontSize: 14, fontWeight: 700, color: m.colour }}>{pct}%</span>
                     )}
-                  </div>
+                    <span style={{ fontSize: 11, color: "var(--ink-3)", transform: open === m.id ? "rotate(90deg)" : "none", transition: "transform .15s" }} aria-hidden>
+                      ›
+                    </span>
+                  </button>
 
                   {m.dealt === 0 ? (
                     <p style={{ fontSize: 12, color: "var(--ink-3)" }}>
@@ -135,6 +155,38 @@ export default function ParentInsights({ insights, days, demo = false }: Props) 
                   {m.grabbed > 0 && (
                     <div style={{ fontSize: 11, color: "var(--leaf)", marginTop: 7, fontWeight: 600 }}>
                       + grabbed {m.grabbed} paid {m.grabbed === 1 ? "job" : "jobs"} off the board
+                    </div>
+                  )}
+
+                  {open === m.id && (
+                    <div style={{ marginTop: 12, borderTop: "1px solid var(--paper-2)", paddingTop: 11 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+                        <span style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: ".04em", textTransform: "uppercase", color: "var(--ink-3)" }}>
+                          Today
+                        </span>
+                        {(m.todayPence ?? 0) > 0 && (
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--leaf)" }}>
+                            {formatPence(m.todayPence ?? 0)} earned
+                          </span>
+                        )}
+                      </div>
+                      {(m.today ?? []).length === 0 ? (
+                        <p style={{ fontSize: 12, color: "var(--ink-3)" }}>
+                          Nothing done or paid yet today.
+                        </p>
+                      ) : (
+                        (m.today ?? []).map((it, i) => (
+                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 9, padding: "6px 0", borderBottom: "1px solid var(--paper)" }}>
+                            <span style={{ fontSize: 16, width: 22, textAlign: "center", flex: "none" }} aria-hidden>
+                              {it.icon}
+                            </span>
+                            <span style={{ fontSize: 13, flex: 1 }}>{it.title}</span>
+                            <span style={{ fontSize: 12.5, fontWeight: 700, color: it.pence > 0 ? "var(--leaf)" : "var(--ink-3)" }}>
+                              {it.pence > 0 ? formatPence(it.pence) : "done"}
+                            </span>
+                          </div>
+                        ))
+                      )}
                     </div>
                   )}
                 </div>
