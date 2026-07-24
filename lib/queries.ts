@@ -108,15 +108,19 @@ export async function getParentToday(householdId: string) {
   );
   const weekendCrew = present.some((m) => m.presence === "eow_and_holidays");
 
-  // who rides up front today — a stable, fair daily order of whoever's here,
-  // seeded by household + date so it holds all day and changes tomorrow. The
-  // client slices this to the chosen number of seats, so toggling is instant.
+  // who rides up front today — a FAIR daily rotation, not a fresh random pick
+  // (which kept landing on the same children). Everyone gets a turn before
+  // anyone repeats, and nobody gets it two days running. Precompute both the
+  // 1-seat and 2-seat pick so the seat toggle is instant.
   const seats = Math.min(2, Math.max(1, household?.front_seats ?? 1));
-  const frontOrder = seededShuffle(present, `${householdId}:${date}:front`).map((m) => ({
-    id: m.id,
-    name: m.display_name,
-    colour: m.colour_hex,
-  }));
+  const frontInfo = (id: string) => {
+    const m = present.find((p) => p.id === id)!;
+    return { id: m.id, name: m.display_name, colour: m.colour_hex };
+  };
+  const dayNum = Math.floor(new Date(`${date}T00:00:00Z`).getTime() / 86_400_000);
+  const frontFor = (n: number) =>
+    rotateFrontSeat(present.map((m) => m.id), n, dayNum, householdId).map(frontInfo);
+  const frontSeat = { seats, one: frontFor(1), two: frontFor(2) };
   const hasInstance = new Set(all.map((j) => j.job_def_id));
 
   // essential jobs that should happen today but nobody was dealt them
@@ -141,8 +145,27 @@ export async function getParentToday(householdId: string) {
     jobs: all,
     undistributed,
     parentTasks: (tasks ?? []) as { id: string; title: string; done: boolean }[],
-    frontSeat: { seats, order: frontOrder },
+    frontSeat,
   };
+}
+
+/**
+ * Fair front-seat rotation. Shuffles who's here into a stable per-household
+ * order, then walks a sliding window of `seats` through it, advancing `seats`
+ * places per day. Everyone gets a turn before anyone repeats, the window never
+ * overlaps day-to-day (so no child two days running), and the picks are always
+ * distinct. Deterministic, so it holds all day and moves on tomorrow.
+ */
+function rotateFrontSeat(presentIds: string[], seats: number, dayNum: number, householdId: string): string[] {
+  const ids = [...presentIds].sort(); // canonical order, independent of fetch order
+  const n = ids.length;
+  if (n === 0) return [];
+  const s = Math.min(n, Math.max(1, seats));
+  const base = seededShuffle(ids, `${householdId}:front:base`);
+  const offset = (((dayNum * s) % n) + n) % n;
+  const picks: string[] = [];
+  for (let i = 0; i < s; i++) picks.push(base[(offset + i) % n]);
+  return picks;
 }
 
 export interface TodayItem {

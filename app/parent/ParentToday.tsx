@@ -41,7 +41,8 @@ interface FrontPick {
 }
 interface FrontSeat {
   seats: number;
-  order: FrontPick[];
+  one: FrontPick[];
+  two: FrontPick[];
 }
 interface Props {
   loadState: "normal" | "stretched" | "survival";
@@ -65,7 +66,7 @@ export default function ParentToday({
   jobs,
   undistributed = [],
   parentTasks = [],
-  frontSeat = { seats: 1, order: [] },
+  frontSeat = { seats: 1, one: [], two: [] },
   demo = false,
 }: Props) {
   const router = useRouter();
@@ -81,7 +82,7 @@ export default function ParentToday({
   const [giving, setGiving] = useState<string | null>(null); // jobId whose "give it to…" is open
   const [confirmReshuffle, setConfirmReshuffle] = useState(false);
   const [frontSeats, setFrontSeats] = useState(frontSeat.seats);
-  const frontPicks = frontSeat.order.slice(0, frontSeats); // instant, no refetch
+  const frontPicks = frontSeats === 2 ? frontSeat.two : frontSeat.one; // instant, no refetch
 
   function chooseSeats(n: number) {
     setFrontSeats(n); // update the display immediately

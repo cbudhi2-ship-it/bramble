@@ -185,7 +185,7 @@ export function getDemoParent() {
   return {
     loadState: "normal" as const,
     members,
-    frontSeat: { seats: 1, order: frontOrder },
+    frontSeat: { seats: 1, one: frontOrder.slice(0, 1), two: frontOrder.slice(0, 2) },
     jobs: [
       // waiting for review
       { id: "v1", status: "submitted", title: "Washing in", icon: "🧺", kind: "house_critical", price_pence: 100, fallback_pence: 75, is_bonus: false, parent_note: null, whoName: "Posy", whoColour: PINK },
